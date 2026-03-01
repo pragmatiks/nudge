@@ -1,0 +1,14 @@
+services:
+  nudge:
+    build: .
+    container_name: nudge-bot
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - nudge_data:/data
+    environment:
+      - TZ=Europe/Berlin
+
+volumes:
+  nudge_data:
+    driver: local

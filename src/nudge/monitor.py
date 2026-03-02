@@ -29,7 +29,7 @@ class TaskMonitor:
             agent = AgentClient(
                 resume_session_id=None,
                 system_prompt=TASK_MONITOR_SYSTEM_PROMPT,
-                mcp_mode="full",
+                mcp_mode="monitor",
                 max_turns=5,
             )
             raw_response, _ = await agent.send_message(prompt)

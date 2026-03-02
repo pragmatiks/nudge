@@ -22,9 +22,23 @@ def get_mcp_servers(s: Settings) -> dict:
             "args": [str(_VENDORED_MCP_SERVER)],
         }
 
+    if s.perplexity_api_key:
+        servers["perplexity"] = {
+            "command": "npx",
+            "args": ["-y", "@perplexity-ai/mcp-server"],
+            "env": {"PERPLEXITY_API_KEY": s.perplexity_api_key},
+        }
+
     return servers
 
 
-def get_allowed_tools(servers: dict) -> list[str]:
-    """Return wildcard permissions for all configured MCP servers."""
-    return [f"mcp__{name}__*" for name in servers]
+def get_allowed_tools(servers: dict, mcp_mode: str = "full") -> list[str]:
+    """Return tool permissions based on mode and configured MCP servers.
+
+    Only the main agent (mcp_mode="full") gets Bash access for pass-cli.
+    Observer and task monitor don't need Bash or browser automation.
+    """
+    tools = [f"mcp__{name}__*" for name in servers]
+    if mcp_mode == "full":
+        tools.append("Bash")
+    return tools

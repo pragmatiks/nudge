@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     # Todoist
     todoist_api_token: str
 
+    # Perplexity (optional — web search for the agent)
+    perplexity_api_key: str = ""
+
     # Nudge behavior
     daily_briefing_time: str = "09:30"
     quiet_hours_start: int = 22  # 10 PM

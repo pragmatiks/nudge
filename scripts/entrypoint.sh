@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-# Ensure claude-mem data directory exists
+# Ensure data directories exist
 mkdir -p /data/claude-mem/logs
+mkdir -p /data/proton-pass
 
 # Symlink so claude-mem finds its data regardless of how it resolves home
 ln -sfn /data/claude-mem "$HOME/.claude-mem"

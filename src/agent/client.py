@@ -40,7 +40,7 @@ class AgentClient:
             servers = {k: v for k, v in servers.items() if k == "claude-mem"}
 
         self._mcp_servers = servers
-        self._allowed_tools = get_allowed_tools(self._mcp_servers)
+        self._allowed_tools = get_allowed_tools(self._mcp_servers, mcp_mode)
         self._options = ClaudeAgentOptions(
             system_prompt=system_prompt or MAIN_AGENT_SYSTEM_PROMPT,
             mcp_servers=self._mcp_servers,

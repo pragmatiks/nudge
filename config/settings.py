@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     todoist_api_token: str
 
     # Nudge behavior
-    daily_briefing_time: str = "08:00"
+    daily_briefing_time: str = "09:30"
     quiet_hours_start: int = 22  # 10 PM
     quiet_hours_end: int = 8  # 8 AM
     max_nudges_per_hour: int = 3

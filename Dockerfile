@@ -10,6 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl unzip && \
 
 ENV PATH="/usr/local/bun/bin:$PATH"
 
+# uv (provides uvx, needed by claude-mem for ChromaDB MCP server)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx
+
 # Install claude-code CLI (required by Agent SDK)
 RUN npm install -g @anthropic-ai/claude-code
 
@@ -25,7 +30,7 @@ COPY scripts/ scripts/
 
 # Non-root user (Claude CLI refuses bypassPermissions as root)
 RUN useradd -m -s /bin/bash nudge && \
-    mkdir -p /data/claude-mem /data/sessions && \
+    mkdir -p /data/claude-mem /data/sessions /data/nudges && \
     chown -R nudge:nudge /data /app
 
 USER nudge

@@ -1,10 +1,14 @@
 FROM python:3.12-slim
 
-# Node.js for MCP servers (e.g. Todoist via npx)
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+# Node.js (for MCP server scripts) + Bun (for claude-mem worker) + curl (for health checks)
+RUN apt-get update && apt-get install -y --no-install-recommends curl unzip && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
+    curl -fsSL https://bun.sh/install | bash && \
+    mv /root/.bun /usr/local/bun && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/local/bun/bin:$PATH"
 
 # Install claude-code CLI (required by Agent SDK)
 RUN npm install -g @anthropic-ai/claude-code
@@ -14,13 +18,20 @@ WORKDIR /app
 COPY pyproject.toml .
 RUN pip install --no-cache-dir .
 
+COPY vendor/ vendor/
 COPY config/ config/
 COPY src/ src/
+COPY scripts/ scripts/
 
-RUN mkdir -p /data/sessions
+# Non-root user (Claude CLI refuses bypassPermissions as root)
+RUN useradd -m -s /bin/bash nudge && \
+    mkdir -p /data/claude-mem /data/sessions && \
+    chown -R nudge:nudge /data /app
+
+USER nudge
 
 VOLUME /data
 
 ENV TZ=Europe/Berlin
 
-CMD ["python", "-m", "src.main"]
+CMD ["/app/scripts/entrypoint.sh"]

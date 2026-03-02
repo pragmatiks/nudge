@@ -4,7 +4,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 from config import settings
 from src.telegram.access import owner_filter
-from src.telegram.handlers import handle_message, handle_start
+from src.telegram.handlers import handle_message, handle_start, shutdown_agent
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,9 @@ def create_app() -> Application:
 
     # Text messages — owner only
     app.add_handler(MessageHandler(owner_filter & filters.TEXT & ~filters.COMMAND, handle_message))
+
+    # Clean up agent client on shutdown
+    app.post_shutdown = shutdown_agent
 
     logger.info("Telegram bot configured (owner_id=%s)", settings.telegram_owner_id)
     return app

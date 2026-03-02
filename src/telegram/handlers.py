@@ -1,7 +1,7 @@
 import logging
 
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import Application, ContextTypes
 
 from src.agent.client import AgentClient
 
@@ -46,3 +46,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /start command."""
     await update.message.reply_text("Hey! I'm Nudge, your personal assistant. What can I help with?")
+
+
+async def shutdown_agent(app: Application) -> None:
+    """Clean up the agent client on bot shutdown."""
+    global _agent
+    if _agent is not None:
+        await _agent.close()
+        _agent = None

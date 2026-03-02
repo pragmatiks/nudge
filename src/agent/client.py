@@ -4,8 +4,10 @@ import os
 from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
+    ClaudeSDKClient,
+    ResultMessage,
     TextBlock,
-    query,
+    ToolUseBlock,
 )
 
 from config import get_settings
@@ -16,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class AgentClient:
-    """Wraps Claude Agent SDK for handling user messages.
+    """Wraps Claude Agent SDK with a persistent session.
 
-    Phase 1: stateless query() per message.
-    Phase 3 will upgrade to ClaudeSDKClient with session persistence.
+    Uses ClaudeSDKClient for multi-turn conversation with context
+    maintained across messages within the same session.
     """
 
     def __init__(self) -> None:
@@ -37,23 +39,52 @@ class AgentClient:
         os.environ.setdefault(
             "CLAUDE_CODE_OAUTH_TOKEN", s.claude_code_oauth_token
         )
+        self._client: ClaudeSDKClient | None = None
+        self._session_id: str | None = None
         logger.info(
             "AgentClient initialized with MCP servers: %s",
             list(self._mcp_servers.keys()),
         )
 
+    async def _ensure_client(self) -> ClaudeSDKClient:
+        """Get or create the SDK client."""
+        if self._client is None:
+            self._client = ClaudeSDKClient(options=self._options)
+            await self._client.__aenter__()
+            logger.info("ClaudeSDKClient connected")
+        return self._client
+
     async def send_message(self, text: str) -> str:
         """Send a user message to Claude and return the text response."""
-        logger.debug("Sending message to Claude: %s", text[:100])
+        logger.info("Sending to Claude: %s", text[:100])
+
+        client = await self._ensure_client()
+        await client.query(text)
 
         response_parts: list[str] = []
 
-        async for message in query(prompt=text, options=self._options):
+        async for message in client.receive_response():
             if isinstance(message, AssistantMessage):
                 for block in message.content:
                     if isinstance(block, TextBlock):
                         response_parts.append(block.text)
+                    elif isinstance(block, ToolUseBlock):
+                        logger.info("Tool call: %s", block.name)
+            elif isinstance(message, ResultMessage):
+                self._session_id = getattr(message, "session_id", None)
+                logger.info(
+                    "Result: session=%s, cost=$%s",
+                    self._session_id,
+                    getattr(message, "total_cost_usd", None),
+                )
 
         response = "\n".join(response_parts) if response_parts else "..."
-        logger.debug("Got response (%d chars)", len(response))
+        logger.info("Response (%d chars)", len(response))
         return response
+
+    async def close(self) -> None:
+        """Shut down the client connection."""
+        if self._client is not None:
+            await self._client.__aexit__(None, None, None)
+            self._client = None
+            logger.info("ClaudeSDKClient disconnected")

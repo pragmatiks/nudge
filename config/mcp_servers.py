@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from config.settings import Settings
+
+_VENDORED_MCP_SERVER = Path(__file__).parent.parent / "vendor" / "claude-mem" / "scripts" / "mcp-server.cjs"
 
 
 def get_mcp_servers(s: Settings) -> dict:
@@ -10,6 +14,12 @@ def get_mcp_servers(s: Settings) -> dict:
             "type": "http",
             "url": "https://ai.todoist.net/mcp",
             "headers": {"Authorization": f"Bearer {s.todoist_api_token}"},
+        }
+
+    if _VENDORED_MCP_SERVER.exists():
+        servers["claude-mem"] = {
+            "command": "node",
+            "args": [str(_VENDORED_MCP_SERVER)],
         }
 
     return servers

@@ -33,16 +33,26 @@ class Coordinator:
         self._sessions.delete(MAIN_THREAD)
         logger.info("Main session cleared")
 
-    async def process_message(self, user_text: str, on_text=None) -> str:
+    async def process_message(
+        self,
+        user_text: str,
+        on_text=None,
+        on_tool_use=None,
+    ) -> str:
         """Process a user message and return the response.
 
         Resumes the main session if one exists. If resume fails (e.g. stale
         session after container rebuild), falls back to a fresh session.
         After responding, fires the observer in the background.
         If on_text is provided, streams each assistant message immediately.
+        If on_tool_use is provided, called with tool name on each tool invocation.
         """
         self._last_user_activity = time.monotonic()
-        response = await self._send_to_main_session(user_text, on_text=on_text)
+        response = await self._send_to_main_session(
+            user_text,
+            on_text=on_text,
+            on_tool_use=on_tool_use,
+        )
 
         if self._observer:
             asyncio.create_task(self._observer.observe(user_text, response))
@@ -56,21 +66,34 @@ class Coordinator:
         """
         return await self._send_to_main_session(prompt, on_text=on_text)
 
-    async def _send_to_main_session(self, text: str, on_text=None) -> str:
+    async def _send_to_main_session(
+        self,
+        text: str,
+        on_text=None,
+        on_tool_use=None,
+    ) -> str:
         """Send text through the main session with resume/fallback logic."""
         session_id = self._sessions.get(MAIN_THREAD)
         logger.info("Processing message (session=%s)", session_id)
 
         try:
             agent = AgentClient(resume_session_id=session_id)
-            response, new_session_id = await agent.send_message(text, on_text=on_text)
+            response, new_session_id = await agent.send_message(
+                text,
+                on_text=on_text,
+                on_tool_use=on_tool_use,
+            )
         except Exception:
             if session_id is None:
                 raise
             logger.warning("Resume failed for session=%s, retrying fresh", session_id)
             self._sessions.delete(MAIN_THREAD)
             agent = AgentClient(resume_session_id=None)
-            response, new_session_id = await agent.send_message(text, on_text=on_text)
+            response, new_session_id = await agent.send_message(
+                text,
+                on_text=on_text,
+                on_tool_use=on_tool_use,
+            )
 
         if new_session_id:
             self._sessions.set(MAIN_THREAD, new_session_id)

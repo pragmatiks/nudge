@@ -50,9 +50,7 @@ class AgentClient:
             permission_mode="bypassPermissions",
             resume=resume_session_id,
         )
-        os.environ.setdefault(
-            "CLAUDE_CODE_OAUTH_TOKEN", s.claude_code_oauth_token
-        )
+        os.environ.setdefault("CLAUDE_CODE_OAUTH_TOKEN", s.claude_code_oauth_token)
         logger.info(
             "AgentClient created (resume=%s, servers=%s)",
             resume_session_id,
@@ -60,12 +58,16 @@ class AgentClient:
         )
 
     async def send_message(
-        self, text: str, on_text: "Callable[[str], Awaitable[None]] | None" = None,
+        self,
+        text: str,
+        on_text: "Callable[[str], Awaitable[None]] | None" = None,
+        on_tool_use: "Callable[[str], Awaitable[None]] | None" = None,
     ) -> tuple[str, str | None]:
         """Send a message and return (response_text, session_id).
 
         Creates a client, processes the message, and closes — all in one call.
         If on_text is provided, each assistant message is streamed immediately.
+        If on_tool_use is provided, called with tool name on each tool invocation.
         """
         logger.info("Sending to Claude: %s", text[:100])
 
@@ -83,6 +85,14 @@ class AgentClient:
                             parts.append(block.text)
                         elif isinstance(block, ToolUseBlock):
                             logger.info("Tool call: %s", block.name)
+                            if on_tool_use:
+                                try:
+                                    await on_tool_use(block.name)
+                                except Exception:
+                                    logger.warning(
+                                        "on_tool_use callback failed",
+                                        exc_info=True,
+                                    )
                     chunk = "\n".join(parts)
                     if chunk:
                         response_parts.append(chunk)

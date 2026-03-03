@@ -1,4 +1,3 @@
-from telegram import Update
 from telegram.ext import filters
 
 from config import settings

@@ -21,6 +21,12 @@ ssh "root@$SERVER" "cd $REMOTE_DIR && git pull && chown -R nudge:nudge $REMOTE_D
 echo "==> Installing runtimes and dependencies"
 ssh "root@$SERVER" "su - nudge -c 'cd $REMOTE_DIR && /home/nudge/.local/bin/mise install && eval \"\$(/home/nudge/.local/bin/mise activate bash)\" && uv sync'"
 
+echo "==> Updating Claude Code"
+ssh "root@$SERVER" "eval \"\$(/root/.local/bin/mise activate bash)\" && npm update -g @anthropic-ai/claude-code && claude --version"
+
+echo "==> Installing systemd units"
+ssh "root@$SERVER" "cp $REMOTE_DIR/scripts/nudge.service /etc/systemd/system/ && cp $REMOTE_DIR/scripts/nudge-update.service /etc/systemd/system/ && cp $REMOTE_DIR/scripts/nudge-update.timer /etc/systemd/system/ && systemctl daemon-reload && systemctl enable nudge-update.timer && systemctl start nudge-update.timer"
+
 echo "==> Restarting service"
 ssh "root@$SERVER" "systemctl restart nudge"
 

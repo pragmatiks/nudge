@@ -84,6 +84,39 @@ async def daily_briefing(context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.exception("Failed to send daily briefing")
 
 
+SESSION_SAVE_PROMPT = """\
+[INTERNAL — SESSION CYCLING]
+Your session is about to be cleared due to inactivity. If there is any important context \
+from recent conversations that hasn't been saved to memory yet, save it now using claude-mem. \
+Focus on: decisions made, action items discussed, key information shared. \
+Do NOT respond with any text — just save if needed."""
+
+
+async def session_cycle(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Repeating job: clear idle sessions after saving context to memory."""
+    from config import settings
+
+    coordinator = context.bot_data["coordinator"]
+    timeout = settings.session_idle_timeout_seconds
+
+    if coordinator.idle_seconds < timeout:
+        return
+
+    if coordinator._sessions.get("main") is None:
+        return
+
+    try:
+        await coordinator.process_internal(SESSION_SAVE_PROMPT)
+        coordinator.clear_session()
+        logger.info(
+            "Session cleared after %.0f seconds idle (threshold: %ds)",
+            coordinator.idle_seconds,
+            timeout,
+        )
+    except Exception:
+        logger.exception("Failed to cycle idle session")
+
+
 async def task_checkin(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Self-scheduling job: ask the task monitor to assess tasks, deliver if needed."""
     monitor = context.bot_data["monitor"]

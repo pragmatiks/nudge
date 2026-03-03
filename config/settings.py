@@ -25,5 +25,8 @@ class Settings(BaseSettings):
     max_nudges_per_day: int = 15
     nudge_check_interval_seconds: int = 60
 
+    # Session management
+    session_idle_timeout_seconds: int = 900  # 15 minutes
+
     # Agent
     max_agent_turns: int = 10

@@ -8,7 +8,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from config import settings
 from src.agent.sessions import SessionStore
 from src.coordinator import Coordinator
-from src.nudge.engine import check_nudges, daily_briefing, task_checkin
+from src.nudge.engine import check_nudges, daily_briefing, session_cycle, task_checkin
 from src.nudge.evaluator import NudgeEvaluator
 from src.nudge.monitor import TaskMonitor
 from src.nudge.observer import Observer
@@ -83,8 +83,15 @@ def _schedule_jobs(app: Application) -> None:
     # Task monitor: first check 2 min after startup, then self-schedules
     job_queue.run_once(task_checkin, when=120, name="task_checkin")
 
+    job_queue.run_repeating(
+        session_cycle,
+        interval=300,
+        first=300,
+        name="session_cycle",
+    )
+
     logger.info(
-        "Scheduled jobs: check_nudges every %ds, daily_briefing at %s, task_checkin (self-scheduling)",
+        "Scheduled jobs: check_nudges every %ds, daily_briefing at %s, task_checkin (self-scheduling), session_cycle every 300s",
         settings.nudge_check_interval_seconds,
         settings.daily_briefing_time,
     )

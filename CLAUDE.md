@@ -85,6 +85,7 @@ All persistent state lives under `/data/` (Docker volume `nudge_data`):
 
 ## Conventions
 
+- **Boy Scout Rule**: Always leave the code cleaner than you found it. Fix lint warnings, unused imports, and small issues in files you touch
 - **Single-owner bot**: `OwnerFilter` in `src/telegram/access.py` restricts all handlers to `TELEGRAM_OWNER_ID`
 - **JSON-only agents**: Observer and TaskMonitor output only JSON. Parsing strips markdown fences and falls back to regex extraction
 - **AgentClient is throwaway**: Created per-message, not long-lived. Session continuity comes from `SessionStore`, not client state

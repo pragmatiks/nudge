@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 
 from src.agent.client import AgentClient
 from src.agent.sessions import SessionStore
@@ -20,6 +21,17 @@ class Coordinator:
     ) -> None:
         self._sessions = session_store
         self._observer = observer
+        self._last_user_activity: float = time.monotonic()
+
+    @property
+    def idle_seconds(self) -> float:
+        """Seconds since last user message."""
+        return time.monotonic() - self._last_user_activity
+
+    def clear_session(self) -> None:
+        """Delete the main session so the next message starts fresh."""
+        self._sessions.delete(MAIN_THREAD)
+        logger.info("Main session cleared")
 
     async def process_message(self, user_text: str, on_text=None) -> str:
         """Process a user message and return the response.
@@ -29,6 +41,7 @@ class Coordinator:
         After responding, fires the observer in the background.
         If on_text is provided, streams each assistant message immediately.
         """
+        self._last_user_activity = time.monotonic()
         response = await self._send_to_main_session(user_text, on_text=on_text)
 
         if self._observer:

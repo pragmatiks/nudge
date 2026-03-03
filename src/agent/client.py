@@ -1,5 +1,6 @@
 import logging
 import os
+from collections.abc import Awaitable, Callable
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -58,10 +59,13 @@ class AgentClient:
             list(self._mcp_servers.keys()),
         )
 
-    async def send_message(self, text: str) -> tuple[str, str | None]:
+    async def send_message(
+        self, text: str, on_text: "Callable[[str], Awaitable[None]] | None" = None,
+    ) -> tuple[str, str | None]:
         """Send a message and return (response_text, session_id).
 
         Creates a client, processes the message, and closes — all in one call.
+        If on_text is provided, each assistant message is streamed immediately.
         """
         logger.info("Sending to Claude: %s", text[:100])
 
@@ -73,11 +77,20 @@ class AgentClient:
 
             async for message in client.receive_response():
                 if isinstance(message, AssistantMessage):
+                    parts = []
                     for block in message.content:
                         if isinstance(block, TextBlock):
-                            response_parts.append(block.text)
+                            parts.append(block.text)
                         elif isinstance(block, ToolUseBlock):
                             logger.info("Tool call: %s", block.name)
+                    chunk = "\n".join(parts)
+                    if chunk:
+                        response_parts.append(chunk)
+                        if on_text:
+                            try:
+                                await on_text(chunk)
+                            except Exception:
+                                logger.warning("on_text callback failed", exc_info=True)
                 elif isinstance(message, ResultMessage):
                     session_id = getattr(message, "session_id", None)
                     logger.info(

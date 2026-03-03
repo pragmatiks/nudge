@@ -25,10 +25,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     logger.info("Message from owner (chat %s): %s", chat_id, user_text[:80])
 
     await update.message.chat.send_action("typing")
+    sent_any = False
+
+    async def send_text(text: str) -> None:
+        nonlocal sent_any
+        await context.bot.send_message(chat_id, text, parse_mode="Markdown")
+        await update.message.chat.send_action("typing")
+        sent_any = True
 
     try:
-        response = await _coordinator.process_message(user_text)
-        await update.message.reply_text(response, parse_mode="Markdown")
+        response = await _coordinator.process_message(user_text, on_text=send_text)
+        if not sent_any:
+            await update.message.reply_text(response, parse_mode="Markdown")
     except Exception:
         logger.exception("Error processing message")
         await update.message.reply_text("Something went wrong. Check the logs.")

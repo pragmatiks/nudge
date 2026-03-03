@@ -44,8 +44,16 @@ async def check_nudges(context: ContextTypes.DEFAULT_TYPE) -> None:
 
         try:
             prompt = NUDGE_DELIVERY_PROMPT.format(about=nudge.about, context=nudge.context)
-            response = await coordinator.process_internal(prompt)
-            await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+            sent = False
+
+            async def _send(text):
+                nonlocal sent
+                await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+                sent = True
+
+            response = await coordinator.process_internal(prompt, on_text=_send)
+            if not sent:
+                await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
             store.mark_sent(nudge.id)
             logger.info("Delivered nudge %s", nudge.id)
         except Exception:
@@ -61,8 +69,16 @@ async def daily_briefing(context: ContextTypes.DEFAULT_TYPE) -> None:
     store.cleanup_old()
 
     try:
-        response = await coordinator.process_internal(DAILY_BRIEFING_PROMPT)
-        await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+        sent = False
+
+        async def _send(text):
+            nonlocal sent
+            await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+            sent = True
+
+        response = await coordinator.process_internal(DAILY_BRIEFING_PROMPT, on_text=_send)
+        if not sent:
+            await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
         logger.info("Daily briefing sent")
     except Exception:
         logger.exception("Failed to send daily briefing")
@@ -85,8 +101,16 @@ async def task_checkin(context: ContextTypes.DEFAULT_TYPE) -> None:
             allowed, reason = evaluator.should_deliver()
             if allowed:
                 prompt = f"[INTERNAL — TASK CHECK-IN]\n{result.prompt}"
-                response = await coordinator.process_internal(prompt)
-                await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+                sent = False
+
+                async def _send(text):
+                    nonlocal sent
+                    await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+                    sent = True
+
+                response = await coordinator.process_internal(prompt, on_text=_send)
+                if not sent:
+                    await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
                 logger.info("Task check-in delivered")
             else:
                 logger.info("Task check-in suppressed: %s", reason)

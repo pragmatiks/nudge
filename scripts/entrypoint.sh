@@ -48,4 +48,4 @@ done
 
 # Start the bot
 echo "Starting Nudge bot..."
-exec python -m src.main
+exec uv run python -m src.main

@@ -9,7 +9,7 @@ INSTALL_DIR="/opt/nudge"
 
 echo "==> Installing system dependencies"
 apt-get update
-apt-get install -y curl git build-essential
+apt-get install -y curl git build-essential jq
 
 echo "==> Installing mise"
 curl https://mise.run | sh

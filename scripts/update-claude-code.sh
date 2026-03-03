@@ -5,9 +5,11 @@ set -euo pipefail
 # Runs as root (needs npm global + systemctl restart)
 
 LOG_TAG="update-claude-code"
+export PATH="/root/.local/share/mise/shims:$PATH"
 
 old_version=$(claude --version 2>/dev/null || echo "unknown")
 npm update -g @anthropic-ai/claude-code
+/root/.local/bin/mise reshim
 
 new_version=$(claude --version 2>/dev/null || echo "unknown")
 

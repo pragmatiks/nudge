@@ -6,4 +6,3 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/opt/nudge/scripts/update-claude-code.sh
-Environment=PATH=/root/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin

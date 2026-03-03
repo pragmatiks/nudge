@@ -22,7 +22,7 @@ echo "==> Installing runtimes and dependencies"
 ssh "root@$SERVER" "su - nudge -c 'cd $REMOTE_DIR && /home/nudge/.local/bin/mise install && eval \"\$(/home/nudge/.local/bin/mise activate bash)\" && uv sync'"
 
 echo "==> Updating Claude Code"
-ssh "root@$SERVER" "eval \"\$(/root/.local/bin/mise activate bash)\" && npm update -g @anthropic-ai/claude-code && claude --version"
+ssh "root@$SERVER" "PATH=/root/.local/share/mise/shims:\$PATH npm update -g @anthropic-ai/claude-code && /root/.local/bin/mise reshim && PATH=/root/.local/share/mise/shims:\$PATH claude --version"
 
 echo "==> Installing systemd units"
 ssh "root@$SERVER" "cp $REMOTE_DIR/scripts/nudge.service /etc/systemd/system/ && cp $REMOTE_DIR/scripts/nudge-update.service /etc/systemd/system/ && cp $REMOTE_DIR/scripts/nudge-update.timer /etc/systemd/system/ && systemctl daemon-reload && systemctl enable nudge-update.timer && systemctl start nudge-update.timer"

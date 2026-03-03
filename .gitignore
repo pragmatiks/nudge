@@ -208,3 +208,6 @@ __marimo__/
 
 # Local data
 data/
+
+# Local mise config (contains server IP, etc.)
+mise.local.toml

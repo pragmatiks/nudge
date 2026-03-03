@@ -1,0 +1,18 @@
+[tasks.deploy]
+description = "Deploy to remote server"
+run = "./scripts/deploy.sh $NUDGE_SERVER"
+
+[tasks.logs]
+description = "Tail remote container logs"
+run = "ssh root@$NUDGE_SERVER 'cd /opt/nudge && docker compose logs -f --tail=50'"
+
+[tasks.ssh]
+description = "Open SSH session to server"
+run = "ssh root@$NUDGE_SERVER"
+
+[tasks.status]
+description = "Check remote container health"
+run = """
+ssh root@$NUDGE_SERVER "cd /opt/nudge && docker compose ps && echo '' && \
+  echo 'Health:' && curl -sf http://localhost:37777/api/health && echo '' || echo 'Unhealthy'"
+"""

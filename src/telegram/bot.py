@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import time
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from src.telegram.handlers import handle_message, handle_start, set_coordinator,
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path("/data")
+DATA_DIR = Path(os.environ.get("NUDGE_DATA_DIR", "/opt/nudge/data"))
 
 
 def create_app() -> Application:

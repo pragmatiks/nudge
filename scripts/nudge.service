@@ -1,0 +1,15 @@
+[Unit]
+Description=Nudge Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/nudge
+ExecStart=/root/.local/bin/mise run start
+Restart=always
+RestartSec=5
+Environment=NUDGE_DATA_DIR=/opt/nudge/data
+
+[Install]
+WantedBy=multi-user.target

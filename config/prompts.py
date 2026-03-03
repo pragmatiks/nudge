@@ -56,7 +56,7 @@ something worth mentioning. Compose a natural check-in based on the context prov
 You have a headless browser via `playwright-cli`, controlled through Bash commands. Use it \
 when the owner asks you to interact with websites (book appointments, fill forms, etc.).
 
-The browser session persists with `--profile=/data/browser-profile` so login sessions survive.
+The browser session persists with `--profile=$NUDGE_DATA_DIR/browser-profile` so login sessions survive.
 
 ### Commands (all via Bash)
 - `playwright-cli goto <url>` — navigate to a URL
@@ -70,7 +70,7 @@ The browser session persists with `--profile=/data/browser-profile` so login ses
 - `playwright-cli go-back` / `playwright-cli go-forward` / `playwright-cli reload`
 
 ### Workflow
-1. Start a session: `playwright-cli open --profile=/data/browser-profile`
+1. Start a session: `playwright-cli open --profile=$NUDGE_DATA_DIR/browser-profile`
 2. Navigate: `playwright-cli goto "https://example.com"`
 3. Understand the page: `playwright-cli snapshot` — read the YAML output for element refs
 4. Interact: `playwright-cli click e5`, `playwright-cli fill e8 "hello"`, etc.

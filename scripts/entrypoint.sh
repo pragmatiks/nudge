@@ -1,17 +1,23 @@
 #!/bin/bash
 set -e
 
+DATA_DIR="${NUDGE_DATA_DIR:-/opt/nudge/data}"
+APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
 # Ensure data directories exist
-mkdir -p /data/claude-mem/logs
-mkdir -p /data/proton-pass
+mkdir -p "$DATA_DIR/claude-mem/logs"
+mkdir -p "$DATA_DIR/proton-pass"
+mkdir -p "$DATA_DIR/sessions"
+mkdir -p "$DATA_DIR/nudges"
+mkdir -p "$DATA_DIR/browser-profile"
 
 # Symlink so claude-mem finds its data regardless of how it resolves home
-ln -sfn /data/claude-mem "$HOME/.claude-mem"
+ln -sfn "$DATA_DIR/claude-mem" "$HOME/.claude-mem"
 
 # Write claude-mem settings
-cat > /data/claude-mem/settings.json <<EOF
+cat > "$DATA_DIR/claude-mem/settings.json" <<EOF
 {
-  "CLAUDE_MEM_DATA_DIR": "/data/claude-mem",
+  "CLAUDE_MEM_DATA_DIR": "$DATA_DIR/claude-mem",
   "CLAUDE_MEM_WORKER_PORT": "37777",
   "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
   "CLAUDE_MEM_PROVIDER": "claude",
@@ -24,11 +30,11 @@ EOF
 
 # Start claude-mem worker in background
 echo "Starting claude-mem worker..."
-cd /app/vendor/claude-mem/scripts && \
-CLAUDE_MEM_DATA_DIR=/data/claude-mem \
+cd "$APP_DIR/vendor/claude-mem/scripts" && \
+CLAUDE_MEM_DATA_DIR="$DATA_DIR/claude-mem" \
 CLAUDE_MEM_WORKER_PORT=37777 \
   bun worker-service.cjs &
-cd /app
+cd "$APP_DIR"
 
 # Wait for worker to be healthy
 echo "Waiting for claude-mem worker..."

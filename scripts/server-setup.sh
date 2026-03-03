@@ -7,21 +7,13 @@ set -euo pipefail
 REPO_URL="https://github.com/pragmatiks/nudge.git"
 INSTALL_DIR="/opt/nudge"
 
-echo "==> Installing Docker"
+echo "==> Installing system dependencies"
 apt-get update
-apt-get install -y ca-certificates curl
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-chmod a+r /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  > /etc/apt/sources.list.d/docker.list
-apt-get update
-apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+apt-get install -y curl git build-essential
 
-echo "==> Enabling Docker on boot"
-systemctl enable docker
-systemctl start docker
+echo "==> Installing mise"
+curl https://mise.run | sh
+eval "$(/root/.local/bin/mise activate bash)"
 
 echo "==> Installing fail2ban"
 apt-get install -y fail2ban
@@ -36,6 +28,33 @@ else
   git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
+cd "$INSTALL_DIR"
+
+echo "==> Installing runtimes via mise (python, node, bun, uv)"
+/root/.local/bin/mise trust "$INSTALL_DIR"
+/root/.local/bin/mise install
+
+echo "==> Installing Python dependencies"
+eval "$(/root/.local/bin/mise activate bash)"
+uv sync
+
+echo "==> Installing global npm tools (playwright-cli, claude-code)"
+eval "$(/root/.local/bin/mise activate bash)"
+npm install -g @anthropic-ai/claude-code @playwright/cli
+npx playwright install --with-deps chromium
+
+echo "==> Installing Proton Pass CLI"
+curl -fsSL https://proton.me/download/pass-cli/install.sh | bash
+mv /root/.local/bin/pass-cli /usr/local/bin/pass-cli 2>/dev/null || true
+
+echo "==> Creating data directory"
+mkdir -p "$INSTALL_DIR/data"
+
+echo "==> Installing systemd service"
+cp "$INSTALL_DIR/scripts/nudge.service" /etc/systemd/system/nudge.service
+systemctl daemon-reload
+systemctl enable nudge
+
 echo ""
 echo "========================================="
 echo "  Server provisioned successfully!"
@@ -43,11 +62,12 @@ echo "========================================="
 echo ""
 echo "Next steps:"
 echo "  1. Copy your .env file:"
-echo "     scp .env root@$(hostname -I | awk '{print $1}'):$INSTALL_DIR/.env"
+echo "     scp .env root@$(hostname -I | awk '{print $1}'):/opt/nudge/.env"
 echo ""
-echo "  2. Build and start:"
-echo "     cd $INSTALL_DIR && docker compose up -d --build"
+echo "  2. Start the service:"
+echo "     systemctl start nudge"
 echo ""
-echo "  3. Verify:"
-echo "     docker compose -f $INSTALL_DIR/docker-compose.yml ps"
+echo "  3. Check status:"
+echo "     systemctl status nudge"
+echo "     journalctl -u nudge -f"
 echo ""

@@ -16,10 +16,10 @@ fi
 echo "==> Deploying to $SERVER"
 
 echo "==> Pulling latest code"
-ssh "root@$SERVER" "cd $REMOTE_DIR && git pull"
+ssh "root@$SERVER" "cd $REMOTE_DIR && git pull && chown -R nudge:nudge $REMOTE_DIR"
 
 echo "==> Installing runtimes and dependencies"
-ssh "root@$SERVER" "cd $REMOTE_DIR && /root/.local/bin/mise install && eval \"\$(/root/.local/bin/mise activate bash)\" && uv sync"
+ssh "root@$SERVER" "su - nudge -c 'cd $REMOTE_DIR && /home/nudge/.local/bin/mise install && eval \"\$(/home/nudge/.local/bin/mise activate bash)\" && uv sync'"
 
 echo "==> Restarting service"
 ssh "root@$SERVER" "systemctl restart nudge"

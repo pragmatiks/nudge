@@ -5,8 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User=nudge
 WorkingDirectory=/opt/nudge
-ExecStart=/root/.local/bin/mise run start
+ExecStart=/home/nudge/.local/bin/mise run start
 Restart=always
 RestartSec=5
 Environment=NUDGE_DATA_DIR=/opt/nudge/data

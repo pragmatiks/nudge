@@ -1,4 +1,4 @@
-"""Rolling 24-hour message history for Telegram conversations."""
+"""Rolling 24-hour message history for conversations."""
 
 import json
 import logging
@@ -11,7 +11,7 @@ _RETENTION = timedelta(hours=24)
 
 
 class MessageHistory:
-    """In-memory + file-backed buffer of recent Telegram messages.
+    """In-memory + file-backed buffer of recent messages.
 
     Stores user and assistant messages with timestamps, auto-pruning
     entries older than 24 hours on each write.

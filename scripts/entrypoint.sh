@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DATA_DIR="${NUDGE_DATA_DIR:-/opt/nudge/data}"
+DATA_DIR="${NUDGE_DATA_DIR:-/data}"
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Ensure data directories exist
@@ -46,6 +46,6 @@ for i in $(seq 1 30); do
   sleep 0.5
 done
 
-# Start the bot
-echo "Starting Nudge bot..."
-exec uv run python -m src.main
+# Start the server
+echo "Starting Nudge server..."
+exec uv run uvicorn src.api.server:create_app --factory --host 0.0.0.0 --port 8000

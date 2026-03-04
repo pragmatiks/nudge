@@ -1,6 +1,9 @@
 import logging
+import os
 
-from src.telegram.bot import create_app
+import uvicorn
+
+from src.api.server import create_app
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -16,7 +19,9 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     logger.info("Starting Nudge...")
     app = create_app()
-    app.run_polling(drop_pending_updates=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":

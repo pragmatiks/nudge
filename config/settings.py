@@ -4,9 +4,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
-    # Telegram
-    telegram_bot_token: str
-    telegram_owner_id: int
+    # API auth
+    api_token: str
 
     # Claude Agent SDK (uses OAuth token from Max subscription)
     claude_code_oauth_token: str

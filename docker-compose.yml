@@ -4,12 +4,14 @@ services:
     container_name: nudge-bot
     restart: unless-stopped
     env_file: .env
+    ports:
+      - "8000:8000"
     volumes:
       - nudge_data:/data
     environment:
       - TZ=Europe/Berlin
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:37777/api/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health"]
       interval: 30s
       timeout: 5s
       retries: 3

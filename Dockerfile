@@ -29,6 +29,8 @@ WORKDIR /app
 COPY pyproject.toml .
 RUN pip install --no-cache-dir .
 
+EXPOSE 8000
+
 COPY vendor/ vendor/
 COPY config/ config/
 COPY src/ src/

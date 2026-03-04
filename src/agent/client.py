@@ -12,7 +12,12 @@ from claude_agent_sdk import (
 )
 
 from config import get_settings
-from config.mcp_servers import get_allowed_tools, get_mcp_servers
+from config.mcp_servers import (
+    _MONITOR_SERVERS,
+    _OBSERVER_SERVERS,
+    get_allowed_tools,
+    get_mcp_servers,
+)
 from config.prompts import MAIN_AGENT_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -36,9 +41,11 @@ class AgentClient:
         s = get_settings()
         servers = get_mcp_servers(s)
 
-        # Observer only gets claude-mem (not Todoist) to keep cost low
+        # Filter servers by mode
         if mcp_mode == "observer":
-            servers = {k: v for k, v in servers.items() if k == "claude-mem"}
+            servers = {k: v for k, v in servers.items() if k in _OBSERVER_SERVERS}
+        elif mcp_mode == "monitor":
+            servers = {k: v for k, v in servers.items() if k in _MONITOR_SERVERS}
 
         self._mcp_servers = servers
         self._allowed_tools = get_allowed_tools(self._mcp_servers, mcp_mode)

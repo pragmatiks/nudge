@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # Perplexity (optional — web search for the agent)
     perplexity_api_key: str = ""
 
+    # Linear (optional — issue tracking)
+    linear_api_key: str = ""
+
     # Nudge behavior
     daily_briefing_time: str = "09:30"
     quiet_hours_start: int = 22  # 10 PM

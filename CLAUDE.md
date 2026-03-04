@@ -56,9 +56,9 @@ Agent tool access is controlled by mode, defined in `config/mcp_servers.py`:
 
 | Mode | Servers | Bash | Used by |
 |------|---------|------|---------|
-| `full` | todoist, claude-mem, perplexity | yes | Main agent |
+| `full` | todoist, claude-mem, perplexity, linear | yes | Main agent |
 | `observer` | claude-mem only | no | Commitment detection |
-| `monitor` | todoist, claude-mem | no | TaskMonitor |
+| `monitor` | todoist, claude-mem, linear | no | TaskMonitor |
 
 ### Key Modules
 

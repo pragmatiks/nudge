@@ -29,7 +29,19 @@ def get_mcp_servers(s: Settings) -> dict:
             "env": {"PERPLEXITY_API_KEY": s.perplexity_api_key},
         }
 
+    if s.linear_api_key:
+        servers["linear"] = {
+            "type": "http",
+            "url": "https://mcp.linear.app/mcp",
+            "headers": {"Authorization": f"Bearer {s.linear_api_key}"},
+        }
+
     return servers
+
+
+# Servers excluded from non-full modes (observer gets claude-mem only)
+_OBSERVER_SERVERS = {"claude-mem"}
+_MONITOR_SERVERS = {"todoist", "claude-mem", "linear"}
 
 
 def get_allowed_tools(servers: dict, mcp_mode: str = "full") -> list[str]:

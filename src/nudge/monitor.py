@@ -23,7 +23,9 @@ class TaskMonitor:
     async def check(self) -> CheckResult:
         """One-shot Claude call to assess tasks and decide on check-in."""
         now = datetime.now()
-        prompt = f"Current time: {now.strftime('%A, %B %d, %Y at %H:%M')} (Europe/Berlin)"
+        prompt = (
+            f"Current time: {now.strftime('%A, %B %d, %Y at %H:%M')} (Europe/Berlin)"
+        )
 
         try:
             agent = AgentClient(
@@ -47,12 +49,16 @@ class TaskMonitor:
             match = re.search(r"\{.*\}", cleaned, re.DOTALL)
             if not match:
                 logger.warning("Monitor output not valid JSON: %s", raw[:200])
-                return CheckResult(should_check_in=False, prompt="", next_check_minutes=30)
+                return CheckResult(
+                    should_check_in=False, prompt="", next_check_minutes=30
+                )
             try:
                 data = json.loads(match.group())
             except json.JSONDecodeError:
                 logger.warning("Monitor output not valid JSON: %s", raw[:200])
-                return CheckResult(should_check_in=False, prompt="", next_check_minutes=30)
+                return CheckResult(
+                    should_check_in=False, prompt="", next_check_minutes=30
+                )
 
         next_minutes = max(5, min(120, data.get("next_check_minutes", 30)))
 
@@ -62,7 +68,9 @@ class TaskMonitor:
                 data.get("reason", "?"),
                 next_minutes,
             )
-            return CheckResult(should_check_in=False, prompt="", next_check_minutes=next_minutes)
+            return CheckResult(
+                should_check_in=False, prompt="", next_check_minutes=next_minutes
+            )
 
         prompt = data.get("message", "")
         logger.info(
@@ -70,4 +78,6 @@ class TaskMonitor:
             data.get("reason", "?"),
             next_minutes,
         )
-        return CheckResult(should_check_in=True, prompt=prompt, next_check_minutes=next_minutes)
+        return CheckResult(
+            should_check_in=True, prompt=prompt, next_check_minutes=next_minutes
+        )

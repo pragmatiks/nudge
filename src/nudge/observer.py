@@ -24,10 +24,7 @@ class Observer:
             logger.exception("Observer failed (non-fatal)")
 
     async def _run(self, user_text: str, bot_response: str) -> None:
-        prompt = (
-            f"User said: {user_text}\n\n"
-            f"Assistant replied: {bot_response}"
-        )
+        prompt = f"User said: {user_text}\n\nAssistant replied: {bot_response}"
 
         agent = AgentClient(
             resume_session_id=None,
@@ -70,11 +67,13 @@ class Observer:
                 remind_at = datetime.fromisoformat(item["remind_at"])
                 if remind_at.tzinfo is None:
                     remind_at = remind_at.replace(tzinfo=timezone.utc)
-                result.append(Nudge(
-                    remind_at=remind_at,
-                    about=item["about"],
-                    context=item.get("context", ""),
-                ))
+                result.append(
+                    Nudge(
+                        remind_at=remind_at,
+                        about=item["about"],
+                        context=item.get("context", ""),
+                    )
+                )
             except (KeyError, ValueError) as e:
                 logger.warning("Skipping malformed nudge: %s (%s)", item, e)
 

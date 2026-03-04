@@ -36,22 +36,20 @@ class Coordinator:
     async def process_message(
         self,
         user_text: str,
-        on_text=None,
         on_tool_use=None,
+        extra_mcp_servers: dict | None = None,
     ) -> str:
         """Process a user message and return the response.
 
         Resumes the main session if one exists. If resume fails (e.g. stale
         session after container rebuild), falls back to a fresh session.
         After responding, fires the observer in the background.
-        If on_text is provided, streams each assistant message immediately.
-        If on_tool_use is provided, called with tool name on each tool invocation.
         """
         self._last_user_activity = time.monotonic()
         response = await self._send_to_main_session(
             user_text,
-            on_text=on_text,
             on_tool_use=on_tool_use,
+            extra_mcp_servers=extra_mcp_servers,
         )
 
         if self._observer:
@@ -59,28 +57,36 @@ class Coordinator:
 
         return response
 
-    async def process_internal(self, prompt: str, on_text=None) -> str:
+    async def process_internal(
+        self,
+        prompt: str,
+        extra_mcp_servers: dict | None = None,
+    ) -> str:
         """Process an internal prompt (nudge/briefing) through the main session.
 
         Does NOT trigger the observer — prevents recursive nudge chains.
         """
-        return await self._send_to_main_session(prompt, on_text=on_text)
+        return await self._send_to_main_session(
+            prompt, extra_mcp_servers=extra_mcp_servers
+        )
 
     async def _send_to_main_session(
         self,
         text: str,
-        on_text=None,
         on_tool_use=None,
+        extra_mcp_servers: dict | None = None,
     ) -> str:
         """Send text through the main session with resume/fallback logic."""
         session_id = self._sessions.get(MAIN_THREAD)
         logger.info("Processing message (session=%s)", session_id)
 
         try:
-            agent = AgentClient(resume_session_id=session_id)
+            agent = AgentClient(
+                resume_session_id=session_id,
+                extra_mcp_servers=extra_mcp_servers,
+            )
             response, new_session_id = await agent.send_message(
                 text,
-                on_text=on_text,
                 on_tool_use=on_tool_use,
             )
         except Exception:
@@ -88,10 +94,12 @@ class Coordinator:
                 raise
             logger.warning("Resume failed for session=%s, retrying fresh", session_id)
             self._sessions.delete(MAIN_THREAD)
-            agent = AgentClient(resume_session_id=None)
+            agent = AgentClient(
+                resume_session_id=None,
+                extra_mcp_servers=extra_mcp_servers,
+            )
             response, new_session_id = await agent.send_message(
                 text,
-                on_text=on_text,
                 on_tool_use=on_tool_use,
             )
 

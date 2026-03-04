@@ -52,7 +52,8 @@ class NudgeStore:
 
     def count_sent_since(self, since: datetime) -> int:
         return sum(
-            1 for n in self._nudges
+            1
+            for n in self._nudges
             if n.status == NudgeStatus.SENT and n.created_at >= since
         )
 
@@ -60,7 +61,8 @@ class NudgeStore:
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         before = len(self._nudges)
         self._nudges = [
-            n for n in self._nudges
+            n
+            for n in self._nudges
             if n.status == NudgeStatus.PENDING or n.created_at >= cutoff
         ]
         removed = before - len(self._nudges)

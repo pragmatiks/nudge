@@ -2,6 +2,8 @@ import logging
 
 from telegram.ext import ContextTypes
 
+from src.telegram.message_tool import create_message_server
+
 logger = logging.getLogger(__name__)
 
 NUDGE_DELIVERY_PROMPT = """\
@@ -25,16 +27,24 @@ Format: Start with a friendly greeting, then list today's priorities. Keep it co
 bullet points are fine. If there's nothing urgent, say so briefly."""
 
 
+def _make_message_server(context: ContextTypes.DEFAULT_TYPE):
+    """Create a message server from bot_data for engine jobs."""
+    history = context.bot_data["message_history"]
+    chat_id = context.bot_data["owner_chat_id"]
+    return create_message_server(context.bot, chat_id, history)
+
+
 async def check_nudges(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Repeating job: check for due nudges and deliver them."""
     coordinator = context.bot_data["coordinator"]
     store = context.bot_data["nudge_store"]
     evaluator = context.bot_data["evaluator"]
-    chat_id = context.bot_data["owner_chat_id"]
 
     due = store.get_due()
     if not due:
         return
+
+    message_server = _make_message_server(context)
 
     for nudge in due:
         allowed, reason = evaluator.should_deliver()
@@ -43,17 +53,12 @@ async def check_nudges(context: ContextTypes.DEFAULT_TYPE) -> None:
             continue
 
         try:
-            prompt = NUDGE_DELIVERY_PROMPT.format(about=nudge.about, context=nudge.context)
-            sent = False
-
-            async def _send(text):
-                nonlocal sent
-                await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-                sent = True
-
-            response = await coordinator.process_internal(prompt, on_text=_send)
-            if not sent:
-                await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+            prompt = NUDGE_DELIVERY_PROMPT.format(
+                about=nudge.about, context=nudge.context
+            )
+            await coordinator.process_internal(
+                prompt, extra_mcp_servers={"telegram": message_server}
+            )
             store.mark_sent(nudge.id)
             logger.info("Delivered nudge %s", nudge.id)
         except Exception:
@@ -64,21 +69,15 @@ async def daily_briefing(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Daily job: send morning briefing and clean up old nudges."""
     coordinator = context.bot_data["coordinator"]
     store = context.bot_data["nudge_store"]
-    chat_id = context.bot_data["owner_chat_id"]
 
     store.cleanup_old()
 
+    message_server = _make_message_server(context)
+
     try:
-        sent = False
-
-        async def _send(text):
-            nonlocal sent
-            await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-            sent = True
-
-        response = await coordinator.process_internal(DAILY_BRIEFING_PROMPT, on_text=_send)
-        if not sent:
-            await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+        await coordinator.process_internal(
+            DAILY_BRIEFING_PROMPT, extra_mcp_servers={"telegram": message_server}
+        )
         logger.info("Daily briefing sent")
     except Exception:
         logger.exception("Failed to send daily briefing")
@@ -93,7 +92,10 @@ Do NOT respond with any text — just save if needed."""
 
 
 async def session_cycle(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Repeating job: clear idle sessions after saving context to memory."""
+    """Repeating job: clear idle sessions after saving context to memory.
+
+    Deliberately has NO message server — structurally enforces silence.
+    """
     from config import settings
 
     coordinator = context.bot_data["coordinator"]
@@ -122,7 +124,6 @@ async def task_checkin(context: ContextTypes.DEFAULT_TYPE) -> None:
     monitor = context.bot_data["monitor"]
     coordinator = context.bot_data["coordinator"]
     evaluator = context.bot_data["evaluator"]
-    chat_id = context.bot_data["owner_chat_id"]
 
     next_minutes = 30  # default fallback
 
@@ -134,21 +135,17 @@ async def task_checkin(context: ContextTypes.DEFAULT_TYPE) -> None:
             allowed, reason = evaluator.should_deliver()
             if allowed:
                 prompt = f"[INTERNAL — TASK CHECK-IN]\n{result.prompt}"
-                sent = False
-
-                async def _send(text):
-                    nonlocal sent
-                    await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
-                    sent = True
-
-                response = await coordinator.process_internal(prompt, on_text=_send)
-                if not sent:
-                    await context.bot.send_message(chat_id=chat_id, text=response, parse_mode="Markdown")
+                message_server = _make_message_server(context)
+                await coordinator.process_internal(
+                    prompt, extra_mcp_servers={"telegram": message_server}
+                )
                 logger.info("Task check-in delivered")
             else:
                 logger.info("Task check-in suppressed: %s", reason)
     except Exception:
         logger.exception("Task check-in failed")
     finally:
-        context.job_queue.run_once(task_checkin, when=next_minutes * 60, name="task_checkin")
+        context.job_queue.run_once(
+            task_checkin, when=next_minutes * 60, name="task_checkin"
+        )
         logger.info("Next task check-in in %d minutes", next_minutes)

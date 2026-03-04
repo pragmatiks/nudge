@@ -78,6 +78,9 @@ _EXACT_MAP: dict[str, str] = {
     "mcp__calendar__search_events": "Searching calendar...",
     "mcp__calendar__subscribe_calendar": "Subscribing to calendar...",
     "mcp__calendar__unsubscribe_calendar": "Unsubscribing calendar...",
+    # Telegram
+    "mcp__telegram__message": "Sending message...",
+    "mcp__telegram__get_history": "Checking message history...",
     # Bash
     "Bash": "Running a command...",
 }

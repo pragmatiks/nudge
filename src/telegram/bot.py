@@ -14,7 +14,13 @@ from src.nudge.monitor import TaskMonitor
 from src.nudge.observer import Observer
 from src.nudge.store import NudgeStore
 from src.telegram.access import owner_filter
-from src.telegram.handlers import handle_message, handle_start, set_coordinator, shutdown_agent
+from src.telegram.handlers import (
+    handle_message,
+    handle_start,
+    set_coordinator,
+    shutdown_agent,
+)
+from src.telegram.history import MessageHistory
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +44,22 @@ def create_app() -> Application:
     coordinator = Coordinator(session_store, observer=observer)
     set_coordinator(coordinator)
 
-    app = (
-        Application.builder()
-        .token(settings.telegram_bot_token)
-        .build()
-    )
+    app = Application.builder().token(settings.telegram_bot_token).build()
 
     monitor = TaskMonitor()
+    message_history = MessageHistory(DATA_DIR / "history" / "messages.json")
 
     app.bot_data["coordinator"] = coordinator
     app.bot_data["nudge_store"] = nudge_store
     app.bot_data["evaluator"] = evaluator
     app.bot_data["monitor"] = monitor
     app.bot_data["owner_chat_id"] = settings.telegram_owner_id
+    app.bot_data["message_history"] = message_history
 
     app.add_handler(CommandHandler("start", handle_start, filters=owner_filter))
-    app.add_handler(MessageHandler(owner_filter & filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(
+        MessageHandler(owner_filter & filters.TEXT & ~filters.COMMAND, handle_message)
+    )
     app.post_shutdown = shutdown_agent
 
     _schedule_jobs(app)

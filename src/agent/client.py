@@ -37,6 +37,7 @@ class AgentClient:
         system_prompt: str | None = None,
         mcp_mode: str = "full",
         max_turns: int | None = None,
+        extra_mcp_servers: dict | None = None,
     ) -> None:
         s = get_settings()
         servers = get_mcp_servers(s)
@@ -46,6 +47,10 @@ class AgentClient:
             servers = {k: v for k, v in servers.items() if k in _OBSERVER_SERVERS}
         elif mcp_mode == "monitor":
             servers = {k: v for k, v in servers.items() if k in _MONITOR_SERVERS}
+
+        # Merge in runtime SDK servers (e.g. telegram message tool)
+        if extra_mcp_servers:
+            servers = {**servers, **extra_mcp_servers}
 
         self._mcp_servers = servers
         self._allowed_tools = get_allowed_tools(self._mcp_servers, mcp_mode)
@@ -67,13 +72,13 @@ class AgentClient:
     async def send_message(
         self,
         text: str,
-        on_text: "Callable[[str], Awaitable[None]] | None" = None,
         on_tool_use: "Callable[[str], Awaitable[None]] | None" = None,
     ) -> tuple[str, str | None]:
         """Send a message and return (response_text, session_id).
 
         Creates a client, processes the message, and closes — all in one call.
-        If on_text is provided, each assistant message is streamed immediately.
+        Agent text output is private (not streamed). The agent uses the message()
+        tool to explicitly communicate with the user.
         If on_tool_use is provided, called with tool name on each tool invocation.
         """
         logger.info("Sending to Claude: %s", text[:100])
@@ -103,11 +108,6 @@ class AgentClient:
                     chunk = "\n".join(parts)
                     if chunk:
                         response_parts.append(chunk)
-                        if on_text:
-                            try:
-                                await on_text(chunk)
-                            except Exception:
-                                logger.warning("on_text callback failed", exc_info=True)
                 elif isinstance(message, ResultMessage):
                     session_id = getattr(message, "session_id", None)
                     logger.info(

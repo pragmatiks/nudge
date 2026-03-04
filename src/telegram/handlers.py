@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import Application, ContextTypes
 
 from src.coordinator import Coordinator
+from src.telegram.message_tool import QUALIFIED_TOOL_NAME, create_message_server
 from src.telegram.tool_labels import friendly_label
 
 logger = logging.getLogger(__name__)
@@ -25,8 +26,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     chat_id = update.effective_chat.id
     logger.info("Message from owner (chat %s): %s", chat_id, user_text[:80])
 
+    history = context.bot_data["message_history"]
+    history.record("user", user_text)
+
     await update.message.chat.send_action("typing")
-    sent_any = False
     status_msg_id: int | None = None
 
     async def delete_status() -> None:
@@ -40,6 +43,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     async def on_tool(tool_name: str) -> None:
         nonlocal status_msg_id
+        # Don't show status for the message tool itself; clear status when agent sends
+        if tool_name == QUALIFIED_TOOL_NAME:
+            await delete_status()
+            return
         label = friendly_label(tool_name)
         text = f"\u2699\ufe0f {label}"
         if status_msg_id is None:
@@ -51,22 +58,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             except Exception:
                 logger.debug("Failed to edit status message", exc_info=True)
 
-    async def send_text(text: str) -> None:
-        nonlocal sent_any
-        await delete_status()
-        await context.bot.send_message(chat_id, text, parse_mode="Markdown")
-        await update.message.chat.send_action("typing")
-        sent_any = True
+    message_server = create_message_server(context.bot, chat_id, history)
 
     try:
-        response = await _coordinator.process_message(
+        await _coordinator.process_message(
             user_text,
-            on_text=send_text,
             on_tool_use=on_tool,
+            extra_mcp_servers={"telegram": message_server},
         )
         await delete_status()
-        if not sent_any:
-            await update.message.reply_text(response, parse_mode="Markdown")
     except Exception:
         logger.exception("Error processing message")
         await delete_status()

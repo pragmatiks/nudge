@@ -2,7 +2,13 @@ from pathlib import Path
 
 from config.settings import Settings
 
-_VENDORED_MCP_SERVER = Path(__file__).parent.parent / "vendor" / "claude-mem" / "scripts" / "mcp-server.cjs"
+_VENDORED_MCP_SERVER = (
+    Path(__file__).parent.parent
+    / "vendor"
+    / "claude-mem"
+    / "scripts"
+    / "mcp-server.cjs"
+)
 
 
 def get_mcp_servers(s: Settings) -> dict:

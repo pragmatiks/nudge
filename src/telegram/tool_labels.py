@@ -71,6 +71,13 @@ _EXACT_MAP: dict[str, str] = {
     "mcp__linear__delete_attachment": "Deleting Linear attachment...",
     "mcp__linear__list_project_labels": "Listing project labels...",
     "mcp__linear__extract_images": "Extracting images...",
+    # Calendar
+    "mcp__calendar__get_upcoming_events": "Checking upcoming events...",
+    "mcp__calendar__get_events": "Reading calendar events...",
+    "mcp__calendar__get_daily_agenda": "Getting daily agenda...",
+    "mcp__calendar__search_events": "Searching calendar...",
+    "mcp__calendar__subscribe_calendar": "Subscribing to calendar...",
+    "mcp__calendar__unsubscribe_calendar": "Unsubscribing calendar...",
     # Bash
     "Bash": "Running a command...",
 }

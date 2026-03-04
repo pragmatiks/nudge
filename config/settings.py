@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # Linear (optional — issue tracking)
     linear_api_key: str = ""
 
+    # Office 365 calendar (optional — ICS feed URL from Outlook Web)
+    outlook_calendar_ics_url: str = ""
+
     # Nudge behavior
     daily_briefing_time: str = "09:30"
     quiet_hours_start: int = 22  # 10 PM

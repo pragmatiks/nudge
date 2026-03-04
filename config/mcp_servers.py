@@ -36,12 +36,23 @@ def get_mcp_servers(s: Settings) -> dict:
             "headers": {"Authorization": f"Bearer {s.linear_api_key}"},
         }
 
+    if s.outlook_calendar_ics_url:
+        servers["calendar"] = {
+            "command": "npx",
+            "args": ["-y", "@voxxit/mcp-ical"],
+            "env": {
+                "CALENDAR_URL": s.outlook_calendar_ics_url,
+                "CALENDAR_NAME": "Ducker Carlisle",
+                "TZ": "Europe/Berlin",
+            },
+        }
+
     return servers
 
 
 # Servers excluded from non-full modes (observer gets claude-mem only)
 _OBSERVER_SERVERS = {"claude-mem"}
-_MONITOR_SERVERS = {"todoist", "claude-mem", "linear"}
+_MONITOR_SERVERS = {"todoist", "claude-mem", "linear", "calendar"}
 
 
 def get_allowed_tools(servers: dict, mcp_mode: str = "full") -> list[str]:

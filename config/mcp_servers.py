@@ -49,7 +49,7 @@ def get_mcp_servers(s: Settings) -> dict:
             "env": {
                 "CALENDAR_URL": s.outlook_calendar_ics_url,
                 "CALENDAR_NAME": "Ducker Carlisle",
-                "TZ": "Europe/Berlin",
+                "TZ": "Europe/Paris",
             },
         }
 

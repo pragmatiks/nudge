@@ -47,7 +47,7 @@ Internal prompts (nudges, briefings, check-ins) use `Coordinator.process_interna
 ### Proactive Systems (APScheduler jobs)
 
 - **check_nudges** (every 60s): delivers due nudges from NudgeStore, gated by NudgeEvaluator (quiet hours 22–08, rate limits)
-- **daily_briefing** (09:30 Europe/Berlin): sends briefing prompt through main session
+- **daily_briefing** (09:30 Europe/Paris): sends briefing prompt through main session
 - **task_checkin** (self-scheduling, 5–120 min): TaskMonitor asks Claude to review Todoist, Claude decides when to check next
 
 ### MCP Modes

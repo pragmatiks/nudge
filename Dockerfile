@@ -43,7 +43,7 @@ USER nudge
 
 VOLUME /data
 
-ENV TZ=Europe/Berlin
+ENV TZ=Europe/Paris
 ENV PROTON_PASS_KEY_PROVIDER=fs
 ENV PROTON_PASS_SESSION_DIR=/data/proton-pass
 

@@ -7,7 +7,7 @@ services:
     volumes:
       - nudge_data:/data
     environment:
-      - TZ=Europe/Berlin
+      - TZ=Europe/Paris
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:37777/api/health"]
       interval: 30s

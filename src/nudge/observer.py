@@ -64,9 +64,11 @@ class Observer:
             try:
                 from datetime import datetime, timezone
 
+                from zoneinfo import ZoneInfo
+
                 remind_at = datetime.fromisoformat(item["remind_at"])
                 if remind_at.tzinfo is None:
-                    remind_at = remind_at.replace(tzinfo=timezone.utc)
+                    remind_at = remind_at.replace(tzinfo=ZoneInfo("Europe/Paris"))
                 result.append(
                     Nudge(
                         remind_at=remind_at,

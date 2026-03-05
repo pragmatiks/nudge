@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from src.nudge.store import NudgeStore
 
@@ -24,7 +25,7 @@ class NudgeEvaluator:
         self._max_per_day = max_per_day
 
     def should_deliver(self) -> tuple[bool, str]:
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("Europe/Paris"))
         hour = now.hour
 
         # Quiet hours (handles midnight wrap, e.g. 22-08)

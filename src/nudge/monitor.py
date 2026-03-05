@@ -3,6 +3,7 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from config.prompts import TASK_MONITOR_SYSTEM_PROMPT
 from src.agent.client import AgentClient
@@ -22,9 +23,9 @@ class TaskMonitor:
 
     async def check(self) -> CheckResult:
         """One-shot Claude call to assess tasks and decide on check-in."""
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("Europe/Paris"))
         prompt = (
-            f"Current time: {now.strftime('%A, %B %d, %Y at %H:%M')} (Europe/Berlin)"
+            f"Current time: {now.strftime('%A, %B %d, %Y at %H:%M')} (Europe/Paris)"
         )
 
         try:

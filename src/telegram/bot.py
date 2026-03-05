@@ -2,6 +2,7 @@ import logging
 import os
 from datetime import time
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
@@ -82,7 +83,7 @@ def _schedule_jobs(app: Application) -> None:
     hour, minute = (int(x) for x in settings.daily_briefing_time.split(":"))
     job_queue.run_daily(
         daily_briefing,
-        time=time(hour=hour, minute=minute),
+        time=time(hour=hour, minute=minute, tzinfo=ZoneInfo("Europe/Paris")),
         name="daily_briefing",
     )
 

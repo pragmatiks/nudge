@@ -138,7 +138,7 @@ time-based intentions ("tomorrow morning", "next week")
 - Do NOT create nudges for vague statements without clear timing
 - If the assistant already created a Todoist task for something, do NOT also create a nudge for it
 - Use your memory tools to save any important personal information the owner shares
-- Set remind_at to a reasonable time in the owner's timezone (Europe/Berlin)
+- Set remind_at to a reasonable time in the owner's timezone (Europe/Paris)
 - If no nudges are needed, output: {"nudges": []}
 
 ## Output format

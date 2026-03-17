@@ -14,13 +14,13 @@ export function MessageBubble({ message }: Props) {
   });
 
   return (
-    <div className={cn("flex px-4 py-0.5", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("flex px-4 py-1.5", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[80%] px-3 py-2 rounded-xl text-[15px] leading-relaxed break-words",
+          "max-w-[85%] px-3.5 py-2 text-[14px] leading-relaxed break-words rounded-lg",
           isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-bubble-assistant text-neutral-900",
+            ? "bg-bubble-user text-neutral-200 border border-white/[.08]"
+            : "text-neutral-300",
         )}
       >
         {isUser ? (
@@ -29,25 +29,23 @@ export function MessageBubble({ message }: Props) {
           <ReactMarkdown
             components={{
               p: ({ children }) => <p className="my-1">{children}</p>,
-              ul: ({ children }) => <ul className="my-1 pl-5">{children}</ul>,
-              ol: ({ children }) => <ol className="my-1 pl-5">{children}</ol>,
+              ul: ({ children }) => <ul className="my-1 pl-5 list-disc">{children}</ul>,
+              ol: ({ children }) => <ol className="my-1 pl-5 list-decimal">{children}</ol>,
               code: ({ children }) => (
-                <code
-                  className={cn(
-                    "px-1 py-px rounded text-[13px]",
-                    isUser ? "bg-white/20" : "bg-black/[.06]",
-                  )}
-                >
+                <code className="px-1.5 py-0.5 rounded bg-white/[.06] text-[13px] font-mono">
                   {children}
                 </code>
+              ),
+              strong: ({ children }) => (
+                <strong className="font-medium text-neutral-100">{children}</strong>
               ),
             }}
           >
             {message.text}
           </ReactMarkdown>
         )}
-        <div className="text-[11px] opacity-60 mt-1 text-right">
-          {message.queued_at && "buffered \u00B7 "}
+        <div className="text-[11px] text-neutral-500 mt-1 text-right">
+          {message.queued_at && "buffered · "}
           {time}
         </div>
       </div>

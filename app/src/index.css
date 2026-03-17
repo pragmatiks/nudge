@@ -45,10 +45,11 @@
     --color-sidebar-ring: var(--sidebar-ring);
 
     /* Nudge custom tokens */
-    --color-status-connected: #34C759;
-    --color-status-connecting: #FF9500;
-    --color-status-disconnected: #FF3B30;
-    --color-bubble-assistant: #E9E9EB;
+    --color-status-connected: oklch(0.65 0.15 160);
+    --color-status-connecting: oklch(0.75 0.15 75);
+    --color-status-disconnected: oklch(0.65 0.2 25);
+    --color-bubble-user: oklch(0.22 0 0);
+    --color-bubble-assistant: transparent;
 }
 
 :root {

@@ -12,10 +12,10 @@ export function ChatWindow() {
   }, [messages]);
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="flex-1 min-h-0">
       <div className="flex flex-col gap-1 py-2">
         {messages.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-[15px] min-h-[50vh]">
+          <div className="flex-1 flex items-center justify-center text-neutral-500 text-[14px] min-h-[50vh]">
             Send a message to get started
           </div>
         )}

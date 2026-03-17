@@ -35,8 +35,14 @@ export function InputBar({ onSend }: Props) {
     }
   };
 
+  const toolStatus = useChatStore((s) => s.toolStatus);
+
   return (
-    <div className="flex gap-2 px-3 py-2 border-t bg-neutral-50">
+    <div className="flex flex-col border-t border-white/[.06]">
+      {toolStatus && (
+        <div className="px-4 pt-1.5 text-[12px] text-neutral-500 truncate">{toolStatus}</div>
+      )}
+      <div className="flex gap-2 px-3 py-2">
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -44,16 +50,18 @@ export function InputBar({ onSend }: Props) {
         placeholder={disabled ? "Reconnecting..." : "Message..."}
         disabled={disabled}
         rows={1}
-        className="flex-1 min-h-9 max-h-32 rounded-[20px] border-neutral-300 text-[15px] resize-none bg-white disabled:bg-neutral-100"
+        className="flex-1 min-h-9 max-h-32 rounded-lg border-white/[.08] text-[14px] resize-none bg-white/[.04] text-neutral-200 placeholder:text-neutral-500 focus-visible:ring-white/[.12] disabled:opacity-40"
       />
       <Button
         size="icon"
+        variant="ghost"
         onClick={send}
         disabled={disabled || !text.trim()}
-        className="rounded-full shrink-0"
+        className="rounded-lg shrink-0 text-neutral-400 hover:text-neutral-200 hover:bg-white/[.06] disabled:opacity-30"
       >
         <SendHorizontal className="size-4" />
       </Button>
+      </div>
     </div>
   );
 }

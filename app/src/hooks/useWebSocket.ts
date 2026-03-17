@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useChatStore } from "../store/chatStore";
 import type { ServerEvent } from "../types/protocol";
 
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8000/ws";
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8787/ws";
 const WS_TOKEN = import.meta.env.VITE_API_TOKEN || "";
 
 const RECONNECT_BASE = 3000;

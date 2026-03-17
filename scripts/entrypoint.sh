@@ -48,4 +48,4 @@ done
 
 # Start the server
 echo "Starting Nudge server..."
-exec uv run uvicorn src.api.server:create_app --factory --host 0.0.0.0 --port 8000
+exec uv run uvicorn src.api.server:create_app --factory --host 0.0.0.0 --port 8787

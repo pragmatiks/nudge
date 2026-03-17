@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     logger.info("Starting Nudge...")
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
+    port = int(os.getenv("PORT", "8787"))
     reload = os.getenv("RELOAD", "").lower() in ("1", "true")
     if reload:
         uvicorn.run(

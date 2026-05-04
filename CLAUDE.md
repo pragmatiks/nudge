@@ -9,18 +9,21 @@ Nudge is a personal AI assistant with a Tauri desktop app frontend and FastAPI +
 ## Commands
 
 ```bash
-# Run server locally
+# Install dependencies
 uv sync
-python -m src.main
+(cd app && npm install)
 
-# Run Tauri app (in app/ directory)
-cd app && npm run tauri dev
+# Local development (Taskfile.yml)
+task backend            # FastAPI backend with uvicorn hot-reload on :8787
+task frontend           # Tauri dev app (in app/)
+task dev                # both at once
+task dev:stop           # kill both
 
-# Run in Docker (primary deployment method)
-docker compose up -d --build
-
-# Logs
-docker compose logs -f
+# Production deployment (bare-metal, mise + systemd)
+mise run deploy         # git pull + uv sync + systemctl restart on remote
+mise run logs           # journalctl -u nudge -f
+mise run status         # systemctl status nudge + claude-mem health check
+mise run restart        # systemctl restart nudge
 
 # Tests
 uv run pytest
@@ -29,8 +32,8 @@ uv run pytest
 ruff check .
 ruff format .
 
-# One-time Proton Pass login (after first deploy)
-docker exec -it nudge-bot pass-cli login --interactive your@proton.me
+# One-time Proton Pass login (run on the server)
+ssh root@$NUDGE_SERVER 'sudo -u nudge pass-cli login --interactive your@proton.me'
 ```
 
 ## Architecture
@@ -83,7 +86,7 @@ Agent tool access is controlled by mode, defined in `config/mcp_servers.py`:
 
 ### Runtime Data
 
-All persistent state lives under `/data/` (Docker volume `nudge_data`):
+All persistent state lives under `$NUDGE_DATA_DIR` (defaults to `/data`; in production: `/opt/nudge/data`; in local dev: `./data`):
 - `sessions/sessions.json` — Claude session ID map
 - `nudges/pending.json` — Pending nudge queue
 - `claude-mem/` — Memory storage (SQLite + vectors)
@@ -98,5 +101,5 @@ All persistent state lives under `/data/` (Docker volume `nudge_data`):
 - **AgentClient is throwaway**: Created per-message, not long-lived. Session continuity comes from `SessionStore`, not client state
 - **Session fallback**: If resuming a stale session fails, automatically creates a fresh one
 - **Settings proxy**: Import `from config import settings` — it's a lazy proxy backed by `@lru_cache get_settings()`
-- **Container runs as non-root `nudge` user** (claude CLI requires this for `bypassPermissions`)
-- **entrypoint.sh** starts claude-mem worker first, waits for health check at `:37777`, then launches the server
+- **Service runs as non-root `nudge` user** under systemd (claude CLI requires this for `bypassPermissions`)
+- **`scripts/entrypoint.sh`** (invoked by `mise run start`) starts the claude-mem worker on Bun, waits for health at `:37777`, then execs `uvicorn src.api.server:create_app --factory` on `:8787`

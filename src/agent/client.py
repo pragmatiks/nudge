@@ -48,7 +48,7 @@ class AgentClient:
         elif mcp_mode == "monitor":
             servers = {k: v for k, v in servers.items() if k in _MONITOR_SERVERS}
 
-        # Merge in runtime SDK servers (e.g. telegram message tool)
+        # Merge in runtime SDK servers (e.g. message tool)
         if extra_mcp_servers:
             servers = {**servers, **extra_mcp_servers}
 

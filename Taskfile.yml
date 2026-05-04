@@ -1,0 +1,44 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  # --- Local development ---
+
+  backend:
+    desc: Start FastAPI backend natively
+    env:
+      NUDGE_DATA_DIR: ./data
+      RELOAD: "true"
+      CLAUDECODE: ""
+      PORT: "8787"
+    cmds:
+      - mkdir -p data/sessions data/nudges data/history data/claude-mem data/browser-profile
+      - uv run python -m src.main
+
+  frontend:
+    desc: Start Tauri dev app
+    dir: app
+    cmds:
+      - npm run tauri dev
+
+  dev:
+    desc: Start backend + frontend
+    deps: [backend, frontend]
+
+  backend:stop:
+    desc: Stop backend
+    cmds:
+      - pkill -f "python -m src.main" || true
+
+  frontend:stop:
+    desc: Stop Tauri dev app
+    cmds:
+      - pkill -f "tauri dev" || true
+      - pkill -f "vite" || true
+
+  dev:stop:
+    desc: Stop backend + frontend
+    cmds:
+      - task: frontend:stop
+      - task: backend:stop

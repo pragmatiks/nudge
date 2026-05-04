@@ -1,12 +1,14 @@
 [project]
 name = "nudge"
 version = "0.1.0"
-description = "Personal AI assistant on Telegram powered by Claude Agent SDK"
+description = "Personal AI assistant powered by Claude Agent SDK"
 requires-python = ">=3.12"
 dependencies = [
-    "python-telegram-bot[job-queue]>=22.6",
     "claude-agent-sdk>=0.1.0",
     "pydantic-settings>=2.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "apscheduler>=3.10",
 ]
 
 [project.optional-dependencies]

@@ -211,3 +211,17 @@ data/
 
 # Local mise config (contains server IP, etc.)
 mise.local.toml
+
+# Tauri / Node
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+
+# Allow app/src/lib (shadcn utils, overrides Python lib/ ignore)
+!app/src/lib/
+
+# Playwright CLI snapshots
+.playwright-cli/
+
+# App local env (dev tokens)
+app/.env

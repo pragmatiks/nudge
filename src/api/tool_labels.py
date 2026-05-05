@@ -81,6 +81,11 @@ _EXACT_MAP: dict[str, str] = {
     # Nudge message tool
     "mcp__nudge__message": "Sending message...",
     "mcp__nudge__get_history": "Checking message history...",
+    "mcp__nudge__render": "Rendering component...",
+    "mcp__nudge__notify": "Sending notification...",
+    "mcp__nudge__open_url": "Opening URL...",
+    "mcp__nudge__clipboard_write": "Copying to clipboard...",
+    "mcp__nudge__clipboard_read": "Reading clipboard...",
     # Bash
     "Bash": "Running a command...",
 }

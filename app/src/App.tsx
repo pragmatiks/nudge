@@ -4,7 +4,7 @@ import { useWebSocket } from "./hooks/useWebSocket";
 import { useChatStore } from "./store/chatStore";
 
 export default function App() {
-  const { sendMessage } = useWebSocket();
+  const { sendMessage, sendAction } = useWebSocket();
   const connectionStatus = useChatStore((s) => s.connectionStatus);
   const disconnected = connectionStatus !== "connected";
 
@@ -16,7 +16,7 @@ export default function App() {
           {connectionStatus === "connecting" ? "Connecting..." : "Connection lost — reconnecting..."}
         </div>
       )}
-      <ChatWindow />
+      <ChatWindow onAction={sendAction} />
       <InputBar onSend={sendMessage} />
     </div>
   );

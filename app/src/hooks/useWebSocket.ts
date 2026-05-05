@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useChatStore } from "../store/chatStore";
+import { executeClientTool } from "../lib/clientTools";
 import type { ServerEvent } from "../types/protocol";
 
 const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8787/ws";
@@ -42,6 +43,39 @@ export function useWebSocket() {
             queued_at: data.queued_at,
           });
           break;
+        case "user_message":
+          addMessage({
+            id: crypto.randomUUID(),
+            role: "user",
+            text: data.text,
+            timestamp: Date.now(),
+            queued_at: data.queued_at,
+          });
+          break;
+        case "component":
+          setToolStatus(null);
+          console.log("[component]", data.component, JSON.stringify(data.props));
+          addMessage({
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: "",
+            timestamp: Date.now(),
+            queued_at: data.queued_at,
+            component: data.component,
+            componentProps: data.props,
+          });
+          break;
+        case "tool_request":
+          executeClientTool(data.name, data.args)
+            .then((result) =>
+              ws.send(JSON.stringify({ type: "tool_response", id: data.id, result })),
+            )
+            .catch((err) =>
+              ws.send(
+                JSON.stringify({ type: "tool_response", id: data.id, error: err.message }),
+              ),
+            );
+          break;
         case "status":
           setToolStatus(data.text);
           break;
@@ -83,6 +117,12 @@ export function useWebSocket() {
     }
   }, []);
 
+  const sendAction = useCallback((action: string, payload: Record<string, unknown>) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "action", action, payload }));
+    }
+  }, []);
+
   useEffect(() => {
     connect();
     return () => {
@@ -91,5 +131,5 @@ export function useWebSocket() {
     };
   }, [connect]);
 
-  return { sendMessage };
+  return { sendMessage, sendAction };
 }

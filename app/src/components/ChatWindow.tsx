@@ -3,7 +3,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "../store/chatStore";
 import { MessageBubble } from "./MessageBubble";
 
-export function ChatWindow() {
+interface Props {
+  onAction: (action: string, payload: Record<string, unknown>) => void;
+}
+
+export function ChatWindow({ onAction }: Props) {
   const messages = useChatStore((s) => s.messages);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -20,7 +24,7 @@ export function ChatWindow() {
           </div>
         )}
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <MessageBubble key={msg.id} message={msg} onAction={onAction} />
         ))}
         <div ref={bottomRef} />
       </div>

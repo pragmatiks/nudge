@@ -1,17 +1,38 @@
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
+import { ComponentRenderer } from "./rich/ComponentRenderer";
 import type { ChatMessage } from "../types/protocol";
 
 interface Props {
   message: ChatMessage;
+  onAction: (action: string, payload: Record<string, unknown>) => void;
 }
 
-export function MessageBubble({ message }: Props) {
+export function MessageBubble({ message, onAction }: Props) {
   const isUser = message.role === "user";
   const time = new Date(message.timestamp).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  // Rich component message
+  if (message.component && message.componentProps) {
+    return (
+      <div className="flex px-4 py-1.5 justify-start">
+        <div className="max-w-[85%]">
+          <ComponentRenderer
+            component={message.component}
+            props={message.componentProps}
+            onAction={onAction}
+          />
+          <div className="text-[11px] text-neutral-500 mt-1 text-right">
+            {message.queued_at && "buffered · "}
+            {time}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex px-4 py-1.5", isUser ? "justify-end" : "justify-start")}>

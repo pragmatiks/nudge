@@ -62,8 +62,7 @@ class Observer:
         result = []
         for item in nudge_list:
             try:
-                from datetime import datetime, timezone
-
+                from datetime import datetime
                 from zoneinfo import ZoneInfo
 
                 remind_at = datetime.fromisoformat(item["remind_at"])

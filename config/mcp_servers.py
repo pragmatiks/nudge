@@ -12,15 +12,12 @@ _VENDORED_MCP_SERVER = (
 
 
 def get_mcp_servers(s: Settings) -> dict:
-    """Build MCP server configuration for the Claude Agent."""
-    servers: dict = {}
+    """Build MCP server configuration for the Claude Agent.
 
-    if s.todoist_api_token:
-        servers["todoist"] = {
-            "type": "http",
-            "url": "https://ai.todoist.net/mcp",
-            "headers": {"Authorization": f"Bearer {s.todoist_api_token}"},
-        }
+    Tasks and calendar events are managed natively via SDK MCP tools
+    (see src.api.message_tool), so no external task/calendar servers are wired.
+    """
+    servers: dict = {}
 
     if _VENDORED_MCP_SERVER.exists():
         servers["claude-mem"] = {
@@ -42,23 +39,12 @@ def get_mcp_servers(s: Settings) -> dict:
             "headers": {"Authorization": f"Bearer {s.linear_api_key}"},
         }
 
-    if s.outlook_calendar_ics_url:
-        servers["calendar"] = {
-            "command": "npx",
-            "args": ["-y", "@voxxit/mcp-ical"],
-            "env": {
-                "CALENDAR_URL": s.outlook_calendar_ics_url,
-                "CALENDAR_NAME": "Ducker Carlisle",
-                "TZ": "Europe/Paris",
-            },
-        }
-
     return servers
 
 
 # Servers excluded from non-full modes (observer gets claude-mem only)
 _OBSERVER_SERVERS = {"claude-mem"}
-_MONITOR_SERVERS = {"todoist", "claude-mem", "linear", "calendar"}
+_MONITOR_SERVERS = {"claude-mem", "linear"}
 
 
 def get_allowed_tools(servers: dict, mcp_mode: str = "full") -> list[str]:

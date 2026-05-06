@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { ChatMessage, ConnectionStatus } from "../types/protocol";
 
 interface ChatState {
@@ -8,27 +7,21 @@ interface ChatState {
   toolStatus: string | null;
 
   addMessage: (msg: ChatMessage) => void;
+  setMessages: (msgs: ChatMessage[]) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
   setToolStatus: (status: string | null) => void;
 }
 
-export const useChatStore = create<ChatState>()(
-  persist(
-    (set) => ({
-      messages: [],
-      connectionStatus: "disconnected",
-      toolStatus: null,
+// Chat is single-sourced from the backend's history.json (24h rolling buffer).
+// On WS connect we receive a `history_snapshot` and replace local state — so
+// no localStorage persistence here, otherwise the two would drift apart.
+export const useChatStore = create<ChatState>()((set) => ({
+  messages: [],
+  connectionStatus: "disconnected",
+  toolStatus: null,
 
-      addMessage: (msg) =>
-        set((state) => ({ messages: [...state.messages, msg] })),
-
-      setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
-
-      setToolStatus: (toolStatus) => set({ toolStatus }),
-    }),
-    {
-      name: "nudge-chat",
-      partialize: (state) => ({ messages: state.messages }),
-    },
-  ),
-);
+  addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+  setMessages: (messages) => set({ messages }),
+  setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
+  setToolStatus: (toolStatus) => set({ toolStatus }),
+}));

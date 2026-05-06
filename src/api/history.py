@@ -63,3 +63,8 @@ class MessageHistory:
             who = "User" if m["direction"] == "user" else "You"
             lines.append(f"[{local}] {who}: {m['text']}")
         return "\n".join(lines)
+
+    def snapshot(self) -> dict:
+        """Return a snapshot event for newly-connected clients."""
+        self._prune()
+        return {"type": "history_snapshot", "messages": list(self._messages)}

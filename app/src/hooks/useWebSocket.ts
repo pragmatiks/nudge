@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useChatStore } from "../store/chatStore";
+import { useDataStore } from "../store/dataStore";
 import { executeClientTool } from "../lib/clientTools";
-import type { ServerEvent } from "../types/protocol";
+import type { ClientMessage, DataOpType, ServerEvent } from "../types/protocol";
 
 const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8787/ws";
 const WS_TOKEN = import.meta.env.VITE_API_TOKEN || "";
@@ -30,64 +31,97 @@ export function useWebSocket() {
     };
 
     ws.onmessage = (event) => {
-      const data: ServerEvent = JSON.parse(event.data);
+      const evt: ServerEvent = JSON.parse(event.data);
 
-      switch (data.type) {
+      switch (evt.type) {
         case "message":
           setToolStatus(null);
           addMessage({
             id: crypto.randomUUID(),
             role: "assistant",
-            text: data.text,
+            text: evt.text,
             timestamp: Date.now(),
-            queued_at: data.queued_at,
+            queued_at: evt.queued_at,
           });
           break;
         case "user_message":
           addMessage({
             id: crypto.randomUUID(),
             role: "user",
-            text: data.text,
+            text: evt.text,
             timestamp: Date.now(),
-            queued_at: data.queued_at,
+            queued_at: evt.queued_at,
           });
           break;
         case "component":
           setToolStatus(null);
-          console.log("[component]", data.component, JSON.stringify(data.props));
           addMessage({
             id: crypto.randomUUID(),
             role: "assistant",
             text: "",
             timestamp: Date.now(),
-            queued_at: data.queued_at,
-            component: data.component,
-            componentProps: data.props,
+            queued_at: evt.queued_at,
+            component: evt.component,
+            componentProps: evt.props,
           });
           break;
         case "tool_request":
-          executeClientTool(data.name, data.args)
+          executeClientTool(evt.name, evt.args)
             .then((result) =>
-              ws.send(JSON.stringify({ type: "tool_response", id: data.id, result })),
+              ws.send(JSON.stringify({ type: "tool_response", id: evt.id, result })),
             )
             .catch((err) =>
               ws.send(
-                JSON.stringify({ type: "tool_response", id: data.id, error: err.message }),
+                JSON.stringify({ type: "tool_response", id: evt.id, error: err.message }),
               ),
             );
           break;
         case "status":
-          setToolStatus(data.text);
+          setToolStatus(evt.text);
           break;
         case "error":
           setToolStatus(null);
           addMessage({
             id: crypto.randomUUID(),
             role: "assistant",
-            text: `Error: ${data.text}`,
+            text: `Error: ${evt.text}`,
             timestamp: Date.now(),
           });
           break;
+        case "tasks_snapshot":
+          useDataStore.getState().setTasks(evt.tasks);
+          break;
+        case "task_added":
+        case "task_updated":
+          useDataStore.getState().upsertTask(evt.task);
+          break;
+        case "task_deleted":
+          useDataStore.getState().removeTask(evt.id);
+          break;
+        case "events_snapshot":
+          useDataStore.getState().setEvents(evt.events);
+          break;
+        case "event_added":
+        case "event_updated":
+          useDataStore.getState().upsertEvent(evt.event);
+          break;
+        case "event_deleted":
+          useDataStore.getState().removeEvent(evt.id);
+          break;
+        case "history_snapshot": {
+          // The backend's history.json is the source of truth for chat
+          // (24h rolling buffer). Always replace — the index-coupled compare
+          // we used to do silently dropped reorders/edits at the same ts.
+          useChatStore.getState().setMessages(
+            evt.messages.map((m) => ({
+              id: `${m.ts}-${m.direction}`,
+              role: m.direction,
+              text: m.text,
+              timestamp: Date.parse(m.ts) || Date.now(),
+            })),
+          );
+          break;
+        }
       }
     };
 
@@ -111,17 +145,27 @@ export function useWebSocket() {
     reconnectTimer.current = setTimeout(connect, delay);
   }, [connect]);
 
-  const sendMessage = useCallback((text: string) => {
+  const send = useCallback((msg: ClientMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "message", text }));
+      wsRef.current.send(JSON.stringify(msg));
     }
   }, []);
 
-  const sendAction = useCallback((action: string, payload: Record<string, unknown>) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "action", action, payload }));
-    }
-  }, []);
+  const sendMessage = useCallback(
+    (text: string) => send({ type: "message", text }),
+    [send],
+  );
+
+  const sendAction = useCallback(
+    (action: string, payload: Record<string, unknown>) =>
+      send({ type: "action", action, payload }),
+    [send],
+  );
+
+  const sendDataOp = useCallback(
+    (type: DataOpType, payload: Record<string, unknown>) => send({ type, payload }),
+    [send],
+  );
 
   useEffect(() => {
     connect();
@@ -131,5 +175,5 @@ export function useWebSocket() {
     };
   }, [connect]);
 
-  return { sendMessage, sendAction };
+  return { sendMessage, sendAction, sendDataOp };
 }

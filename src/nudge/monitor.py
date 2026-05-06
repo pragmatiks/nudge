@@ -19,10 +19,14 @@ class CheckResult:
 
 
 class TaskMonitor:
-    """Periodically reviews Todoist tasks and decides whether to check in."""
+    """Periodically reviews the owner's tasks and decides whether to check in."""
 
-    async def check(self) -> CheckResult:
-        """One-shot Claude call to assess tasks and decide on check-in."""
+    async def check(self, extra_mcp_servers: dict | None = None) -> CheckResult:
+        """One-shot Claude call to assess tasks and decide on check-in.
+
+        `extra_mcp_servers` should include the `nudge` SDK server so the
+        monitor can call `task_list` and `event_list` per its system prompt.
+        """
         now = datetime.now(ZoneInfo("Europe/Paris"))
         prompt = (
             f"Current time: {now.strftime('%A, %B %d, %Y at %H:%M')} (Europe/Paris)"
@@ -34,6 +38,7 @@ class TaskMonitor:
                 system_prompt=TASK_MONITOR_SYSTEM_PROMPT,
                 mcp_mode="monitor",
                 max_turns=5,
+                extra_mcp_servers=extra_mcp_servers,
             )
             raw_response, _ = await agent.send_message(prompt)
             return self._parse(raw_response)

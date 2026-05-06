@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Nudge is a personal AI assistant with a Tauri desktop app frontend and FastAPI + WebSocket backend, powered by Claude Agent SDK. It manages tasks via Todoist, detects commitments from conversations, delivers proactive nudges, runs daily briefings, and can automate browser tasks with Playwright and Proton Pass for credentials.
+Nudge is a personal AI assistant with a Tauri desktop app frontend and FastAPI + WebSocket backend, powered by Claude Agent SDK. It manages a native task list and calendar, detects commitments from conversations, delivers proactive nudges, runs daily briefings, and can automate browser tasks with Playwright and Proton Pass for credentials. The Tauri app has three tabs (Chat / Tasks / Calendar) all reflecting the same server state in real time over WebSocket.
 
 ## Commands
 
@@ -54,17 +54,17 @@ Internal prompts (nudges, briefings, check-ins) use `Coordinator.process_interna
 
 - **check_nudges** (every 60s): delivers due nudges from NudgeStore, gated by NudgeEvaluator (quiet hours 22–08, rate limits)
 - **daily_briefing** (09:30 Europe/Paris): sends briefing prompt through main session
-- **task_checkin** (self-scheduling, 5–120 min): TaskMonitor asks Claude to review Todoist, Claude decides when to check next
+- **task_checkin** (self-scheduling, 5–120 min): TaskMonitor asks Claude to review native tasks/events, Claude decides when to check next
 
 ### MCP Modes
 
-Agent tool access is controlled by mode, defined in `config/mcp_servers.py`:
+Agent tool access is controlled by mode, defined in `config/mcp_servers.py`. Tasks and calendar events are managed natively via SDK MCP tools in `src/api/message_tool.py` (not external servers):
 
 | Mode | Servers | Bash | Used by |
 |------|---------|------|---------|
-| `full` | todoist, claude-mem, perplexity, linear, calendar | yes | Main agent |
+| `full` | claude-mem, perplexity, linear | yes | Main agent |
 | `observer` | claude-mem only | no | Commitment detection |
-| `monitor` | todoist, claude-mem, linear, calendar | no | TaskMonitor |
+| `monitor` | claude-mem, linear | no | TaskMonitor |
 
 ### Key Modules
 
@@ -75,7 +75,10 @@ Agent tool access is controlled by mode, defined in `config/mcp_servers.py`:
 - `src/api/server.py` — FastAPI app factory with lifespan management
 - `src/api/ws.py` — WebSocket endpoint with auth and message processing
 - `src/api/pool.py` — ConnectionPool (active WS clients + offline message queue)
-- `src/api/message_tool.py` — SDK MCP server: message() + get_history()
+- `src/api/message_tool.py` — SDK MCP server: message, get_history, render, client tools (notify/open_url/clipboard), and native task_*/event_* CRUD
+- `src/api/data_service.py` — DataService: store mutations + WebSocket broadcast in one place
+- `src/store/tasks.py` + `src/store/events.py` — JSON-backed CRUD for native tasks/events
+- `src/models/task.py` + `src/models/event.py` — dataclass models
 - `src/nudge/engine.py` — NudgeEngine class: all scheduled jobs (APScheduler)
 - `src/nudge/observer.py` — Background commitment detector (JSON-only output, max 3 turns)
 - `src/nudge/monitor.py` — Self-scheduling TaskMonitor (JSON-only output, decides next_check_minutes)
@@ -89,6 +92,8 @@ Agent tool access is controlled by mode, defined in `config/mcp_servers.py`:
 All persistent state lives under `$NUDGE_DATA_DIR` (defaults to `/data`; in production: `/opt/nudge/data`; in local dev: `./data`):
 - `sessions/sessions.json` — Claude session ID map
 - `nudges/pending.json` — Pending nudge queue
+- `tasks/tasks.json` — Native task list
+- `calendar/events.json` — Native calendar events
 - `claude-mem/` — Memory storage (SQLite + vectors)
 - `browser-profile/` — Playwright persistent sessions
 - `proton-pass/` — Proton Pass CLI session

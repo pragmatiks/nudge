@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from config import settings
 from src.agent.sessions import SessionStore
+from src.api.data_service import DataService
 from src.api.history import MessageHistory
 from src.api.pool import ConnectionPool
 from src.api.ws import router as ws_router
@@ -19,6 +20,8 @@ from src.nudge.evaluator import NudgeEvaluator
 from src.nudge.monitor import TaskMonitor
 from src.nudge.observer import Observer
 from src.nudge.store import NudgeStore
+from src.store.events import EventStore
+from src.store.tasks import TaskStore
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,9 @@ async def lifespan(app: FastAPI):
     session_store = SessionStore(DATA_DIR / "sessions" / "sessions.json")
     nudge_store = NudgeStore(DATA_DIR / "nudges" / "pending.json")
     history = MessageHistory(DATA_DIR / "history" / "messages.json")
+    task_store = TaskStore(DATA_DIR / "tasks" / "tasks.json")
+    event_store = EventStore(DATA_DIR / "calendar" / "events.json")
+    data = DataService(task_store, event_store, pool)
 
     observer = Observer(nudge_store)
     evaluator = NudgeEvaluator(
@@ -44,11 +50,14 @@ async def lifespan(app: FastAPI):
 
     coordinator = Coordinator(session_store, observer=observer)
     monitor = TaskMonitor()
-    engine = NudgeEngine(coordinator, nudge_store, evaluator, monitor, pool, history)
+    engine = NudgeEngine(
+        coordinator, nudge_store, evaluator, monitor, pool, history, data
+    )
 
     app.state.pool = pool
     app.state.coordinator = coordinator
     app.state.history = history
+    app.state.data = data
 
     scheduler = AsyncIOScheduler(timezone="Europe/Berlin")
     engine.register_jobs(scheduler)

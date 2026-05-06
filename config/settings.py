@@ -2,7 +2,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
     # API auth
     api_token: str
@@ -10,17 +14,11 @@ class Settings(BaseSettings):
     # Claude Agent SDK (uses OAuth token from Max subscription)
     claude_code_oauth_token: str
 
-    # Todoist
-    todoist_api_token: str
-
     # Perplexity (optional — web search for the agent)
     perplexity_api_key: str = ""
 
     # Linear (optional — issue tracking)
     linear_api_key: str = ""
-
-    # Office 365 calendar (optional — ICS feed URL from Outlook Web)
-    outlook_calendar_ics_url: str = ""
 
     # Nudge behavior
     daily_briefing_time: str = "09:30"

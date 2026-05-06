@@ -134,3 +134,57 @@
     overflow: hidden;
     }
 }
+
+/* ---------------------------------------------------------------------------
+ * schedule-x dark theme overrides — align colors with the app's neutral
+ * palette (Tailwind .dark) so the calendar grid integrates visually.
+ * Scoped to .sx-react-calendar-wrapper.is-dark so we don't affect any
+ * future light-theme usage.
+ * ------------------------------------------------------------------------ */
+.sx-react-calendar-wrapper {
+  height: 100%;
+  width: 100%;
+}
+
+/* Hide schedule-x's built-in view-selection dropdown — we drive views from
+   our own top tab toggle, so the dropdown is redundant. */
+.sx-react-calendar-wrapper .sx__view-selection {
+  display: none;
+}
+
+.sx-react-calendar-wrapper .sx__calendar-wrapper.is-dark {
+  /* Surfaces — flatten schedule-x's purple-tinted dark to match neutral-950 */
+  --sx-color-background: #0a0a0a;
+  --sx-color-surface: #0a0a0a;
+  --sx-color-surface-dim: #0a0a0a;
+  --sx-color-surface-bright: #1a1a1a;
+  --sx-color-surface-container: #141414;
+  --sx-color-surface-container-low: #0f0f0f;
+  --sx-color-surface-container-high: #1c1c1c;
+
+  /* Text */
+  --sx-color-on-background: #e5e5e5;
+  --sx-color-on-surface: #e5e5e5;
+  --sx-internal-color-text: #e5e5e5;
+
+  /* Borders / outlines */
+  --sx-color-outline: #a3a3a3; /* used for day-name labels — neutral-400 */
+  --sx-color-outline-variant: rgba(255, 255, 255, 0.06); /* grid lines */
+  --sx-color-neutral: #a3a3a3;
+  --sx-color-neutral-variant: rgba(255, 255, 255, 0.06);
+
+  /* Primary — keep a neutral cool-blue accent that pops against neutrals */
+  --sx-color-primary: #93c5fd; /* sky-300 */
+  --sx-color-on-primary: #0a0a0a;
+  --sx-color-primary-container: rgba(147, 197, 253, 0.18);
+  --sx-color-on-primary-container: #e5e5e5;
+  --sx-color-surface-tint: #93c5fd;
+
+  /* Secondary / tertiary — neutralize the default purple/pink */
+  --sx-color-secondary: #a3a3a3;
+  --sx-color-secondary-container: #262626;
+  --sx-color-on-secondary-container: #e5e5e5;
+  --sx-color-tertiary: #a3a3a3;
+  --sx-color-tertiary-container: #262626;
+  --sx-color-on-tertiary-container: #e5e5e5;
+}

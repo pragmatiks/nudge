@@ -19,7 +19,7 @@ class CheckResult:
 
 
 class TaskMonitor:
-    """Periodically reviews Todoist tasks and decides whether to check in."""
+    """Periodically reviews the owner's tasks and decides whether to check in."""
 
     async def check(self) -> CheckResult:
         """One-shot Claude call to assess tasks and decide on check-in."""

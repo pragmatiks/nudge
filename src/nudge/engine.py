@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from src.api.data_service import DataService
 from src.api.history import MessageHistory
 from src.api.message_tool import create_message_server
 from src.api.pool import ConnectionPool
@@ -27,8 +28,9 @@ DAILY_BRIEFING_PROMPT = """\
 [INTERNAL — DAILY BRIEFING]
 Good morning! Compose a brief daily briefing for the owner.
 
-Check their Todoist tasks for today and any overdue items. Also search your memory for any \
-relevant context about ongoing projects or commitments.
+Use task_list and event_list to check today's tasks, any overdue items, and the day's \
+calendar events. Also search your memory for relevant context about ongoing projects or \
+commitments.
 
 Format: Start with a friendly greeting, then list today's priorities. Keep it concise — \
 bullet points are fine. If there's nothing urgent, say so briefly."""
@@ -52,6 +54,7 @@ class NudgeEngine:
         monitor: TaskMonitor,
         pool: ConnectionPool,
         history: MessageHistory,
+        data: DataService,
     ) -> None:
         self._coordinator = coordinator
         self._nudge_store = nudge_store
@@ -59,11 +62,12 @@ class NudgeEngine:
         self._monitor = monitor
         self._pool = pool
         self._history = history
+        self._data = data
         self._scheduler: AsyncIOScheduler | None = None
 
     def _make_message_server(self):
         """Create a message server for engine jobs."""
-        return create_message_server(self._pool, self._history)
+        return create_message_server(self._pool, self._history, self._data)
 
     def register_jobs(self, scheduler: AsyncIOScheduler) -> None:
         """Register all scheduled jobs with the APScheduler instance."""

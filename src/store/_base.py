@@ -6,11 +6,18 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Generic, TypeVar
+from typing import Callable, Generic, Protocol, TypeVar
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
+
+class _Storable(Protocol):
+    """Minimum contract a model must satisfy to live in a JsonDictStore."""
+
+    id: str
+
+
+T = TypeVar("T", bound=_Storable)
 
 
 def utcnow() -> datetime:
@@ -20,11 +27,13 @@ def utcnow() -> datetime:
 class JsonDictStore(Generic[T]):
     """Dict-of-T persisted as a JSON array file, keyed by `id` attribute.
 
-    Subclasses provide a model class with `from_dict`/`to_dict` and (optionally)
+    Subclasses provide a model class with `from_dict`/`to_dict`, declare which
+    fields callers may mutate via `ALLOWED_UPDATE_FIELDS`, and (optionally)
     override `_sort_key` to control list ordering.
     """
 
     label: str = "items"
+    ALLOWED_UPDATE_FIELDS: frozenset[str] = frozenset()
 
     def __init__(
         self,
@@ -56,7 +65,7 @@ class JsonDictStore(Generic[T]):
         )
 
     def _sort_key(self, item: T):  # noqa: ANN001 — subclass-specific
-        return getattr(item, "id", "")
+        return item.id
 
     def list(self) -> list[T]:
         return sorted(self._items.values(), key=self._sort_key)
@@ -65,18 +74,26 @@ class JsonDictStore(Generic[T]):
         return self._items.get(item_id)
 
     def add(self, item: T) -> T:
-        self._items[getattr(item, "id")] = item
+        self._items[item.id] = item
         self._save()
         return item
 
     def update(self, item_id: str, **fields) -> T | None:
-        """Apply `fields` via setattr, bump `updated_at`, save."""
+        """Apply whitelisted `fields` via setattr, bump `updated_at`, save.
+
+        Unknown or non-whitelisted fields are logged and skipped — callers
+        that need to mutate an internal field (e.g. `id`, `created_at`) must
+        do so through a dedicated method.
+        """
         item = self._items.get(item_id)
         if not item:
             return None
+        allowed = self.ALLOWED_UPDATE_FIELDS
         for key, value in fields.items():
-            if hasattr(item, key):
-                setattr(item, key, value)
+            if key not in allowed:
+                logger.warning("Ignoring unsupported %s field: %s", self.label, key)
+                continue
+            setattr(item, key, value)
         if hasattr(item, "updated_at"):
             item.updated_at = utcnow()
         self._save()

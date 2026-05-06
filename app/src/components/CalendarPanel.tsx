@@ -24,6 +24,18 @@ const VIEWS: { id: SxViewName; label: string }[] = [
   { id: "month-grid", label: "Month" },
 ];
 
+/** Parse an ISO datetime as a ZonedDateTime in the local TZ.
+ * Accepts offset/Z-suffixed strings (treated as instants) and offset-less
+ * `YYYY-MM-DDTHH:mm[:ss]` strings (treated as local wall-clock time).
+ */
+function toLocalZdt(iso: string, tz: string) {
+  // ends with Z, ±HH:MM, or ±HHMM → has an offset, parse as instant
+  if (/(?:Z|[+-]\d{2}:?\d{2})$/.test(iso)) {
+    return Temporal.Instant.from(iso).toZonedDateTimeISO(tz);
+  }
+  return Temporal.PlainDateTime.from(iso).toZonedDateTime(tz);
+}
+
 /** Convert a stored CalendarEvent (ISO strings) to schedule-x Temporal format. */
 function toSxEvent(e: CalendarEvent): CalendarEventExternal {
   if (e.all_day) {
@@ -40,8 +52,8 @@ function toSxEvent(e: CalendarEvent): CalendarEventExternal {
   return {
     id: e.id,
     title: e.title,
-    start: Temporal.Instant.from(e.start).toZonedDateTimeISO(tz),
-    end: Temporal.Instant.from(e.end).toZonedDateTimeISO(tz),
+    start: toLocalZdt(e.start, tz),
+    end: toLocalZdt(e.end, tz),
     description: e.description || undefined,
     location: e.location || undefined,
   };

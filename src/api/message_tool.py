@@ -132,11 +132,16 @@ def create_message_server(
 
     @tool(
         "task_update",
-        "Update fields on an existing task. Only include fields to change.",
+        "Update fields on an existing task. Only include fields to change. "
+        "Pass an empty string for `notes` or `due` to clear them.",
         {"id": str, "title": str, "notes": str, "due": str, "priority": int},
     )
     async def task_update_tool(args: dict) -> dict:
         fields = {k: v for k, v in args.items() if k != "id" and v is not None}
+        # Empty string on nullable fields means "clear it"; leave required
+        # fields (title) alone so a stray "" doesn't blank the title.
+        if fields.get("due") == "":
+            fields["due"] = None
         if "priority" in fields:
             fields["priority"] = int(fields["priority"])
         task = await data.update_task(args["id"], **fields)

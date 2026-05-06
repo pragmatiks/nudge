@@ -19,6 +19,7 @@ export function Confirm({
   onAction: (action: string, payload: Record<string, unknown>) => void;
 }) {
   const { title, message, actions } = props as unknown as ConfirmProps;
+  if (!Array.isArray(actions)) return null;
 
   return (
     <div className="rounded-lg bg-white/[.04] border border-white/[.08] px-3.5 py-2.5">

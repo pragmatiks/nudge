@@ -184,14 +184,18 @@ class NudgeEngine:
         next_minutes = 30  # default fallback
 
         try:
-            result = await self._monitor.check()
+            # Build the nudge MCP server once: monitor needs task_list/event_list
+            # to inspect data, and the same server is reused if a check-in fires.
+            message_server = self._make_message_server()
+            result = await self._monitor.check(
+                extra_mcp_servers={"nudge": message_server}
+            )
             next_minutes = result.next_check_minutes
 
             if result.should_check_in:
                 allowed, reason = self._evaluator.should_deliver()
                 if allowed:
                     prompt = f"[INTERNAL — TASK CHECK-IN]\n{result.prompt}"
-                    message_server = self._make_message_server()
                     await self._coordinator.process_internal(
                         prompt, extra_mcp_servers={"nudge": message_server}
                     )

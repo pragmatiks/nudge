@@ -109,19 +109,17 @@ export function useWebSocket() {
           useDataStore.getState().removeEvent(evt.id);
           break;
         case "history_snapshot": {
-          const incoming = evt.messages.map((m) => ({
-            id: `${m.ts}-${m.direction}`,
-            role: m.direction,
-            text: m.text,
-            timestamp: Date.parse(m.ts) || Date.now(),
-          }));
-          const chat = useChatStore.getState();
-          if (
-            chat.messages.length !== incoming.length ||
-            chat.messages.some((m, i) => m.id !== incoming[i].id)
-          ) {
-            chat.setMessages(incoming);
-          }
+          // The backend's history.json is the source of truth for chat
+          // (24h rolling buffer). Always replace — the index-coupled compare
+          // we used to do silently dropped reorders/edits at the same ts.
+          useChatStore.getState().setMessages(
+            evt.messages.map((m) => ({
+              id: `${m.ts}-${m.direction}`,
+              role: m.direction,
+              text: m.text,
+              timestamp: Date.parse(m.ts) || Date.now(),
+            })),
+          );
           break;
         }
       }

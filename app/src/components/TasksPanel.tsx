@@ -19,6 +19,16 @@ const PRIORITY_RING: Record<number, string> = {
 
 function formatDue(due: string | null): string | null {
   if (!due) return null;
+  // Date-only (YYYY-MM-DD) is rendered as a local date — bypass `new Date()`
+  // which would parse it as UTC midnight and drift in non-UTC timezones.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(due);
+  if (dateOnly) {
+    const [y, m, day] = due.split("-").map(Number);
+    return new Date(y, m - 1, day).toLocaleString("en-GB", {
+      month: "short",
+      day: "numeric",
+    });
+  }
   const d = new Date(due);
   if (isNaN(d.getTime())) return due;
   const isMidnight = d.getHours() === 0 && d.getMinutes() === 0;

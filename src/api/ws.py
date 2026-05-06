@@ -32,54 +32,52 @@ async def ws_endpoint(ws: WebSocket) -> None:
     history = ws.app.state.history
     data = ws.app.state.data
 
-    queue = await pool.connect()
-    # Send initial snapshots so the client can populate panels immediately.
-    await queue.put(data.tasks_snapshot())
-    await queue.put(data.events_snapshot())
-    await queue.put(history.snapshot())
+    # Send initial snapshots BEFORE joining the pool so any concurrent
+    # task_added/event_added broadcast lands in the queue *after* the
+    # snapshot, not before — otherwise the client's setTasks(snapshot)
+    # would clobber the just-added item.
+    await ws.send_json(data.tasks_snapshot())
+    await ws.send_json(data.events_snapshot())
+    await ws.send_json(history.snapshot())
 
+    queue = await pool.connect()
     incoming: asyncio.Queue[dict] = asyncio.Queue()
 
     async def send_loop() -> None:
         """Drain the pool queue and send events to the WebSocket client."""
-        try:
-            while True:
-                event = await queue.get()
-                await ws.send_json(event)
-        except Exception:
-            pass
+        while True:
+            event = await queue.get()
+            await ws.send_json(event)
 
     async def receive_loop() -> None:
         """Read from WebSocket, dispatching tool_responses immediately and queuing the rest."""
-        try:
-            while True:
-                msg = await ws.receive_json()
-                msg_type = msg.get("type")
+        while True:
+            msg = await ws.receive_json()
+            msg_type = msg.get("type")
 
-                # Tool responses must be handled immediately (not queued)
-                # to avoid deadlock when coordinator is awaiting a client tool result.
-                if msg_type == "tool_response":
-                    pool.resolve_tool(msg["id"], msg.get("result"), msg.get("error"))
-                else:
-                    await incoming.put(msg)
-        except Exception:
-            pass
+            # Tool responses must be handled immediately (not queued)
+            # to avoid deadlock when coordinator is awaiting a client tool result.
+            if msg_type == "tool_response":
+                pool.resolve_tool(msg["id"], msg.get("result"), msg.get("error"))
+            else:
+                await incoming.put(msg)
 
     async def process_loop() -> None:
         """Process queued messages and actions."""
-        try:
-            while True:
-                msg = await incoming.get()
-                msg_type = msg.get("type")
-
+        while True:
+            msg = await incoming.get()
+            msg_type = msg.get("type")
+            try:
                 if msg_type == "action":
                     await _handle_action(msg, pool, coordinator, history, data, ws, queue)
                 elif msg_type == "message":
                     await _handle_message(msg, pool, coordinator, history, data, ws, queue)
                 elif msg_type and msg_type.startswith(("task_", "event_")):
                     await _handle_data_op(msg, data)
-        except Exception:
-            pass
+            except WebSocketDisconnect:
+                raise
+            except Exception:
+                logger.exception("Error processing %s", msg_type)
 
     send_task = asyncio.create_task(send_loop())
     receive_task = asyncio.create_task(receive_loop())

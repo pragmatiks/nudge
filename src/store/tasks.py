@@ -8,6 +8,9 @@ class TaskStore(JsonDictStore[Task]):
     """JSON-backed task persistence."""
 
     label = "tasks"
+    ALLOWED_UPDATE_FIELDS = frozenset(
+        {"title", "notes", "due", "priority", "completed", "completed_at"}
+    )
 
     def __init__(self, path: Path) -> None:
         super().__init__(path, from_dict=Task.from_dict, to_dict=Task.to_dict)
